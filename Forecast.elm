@@ -7,17 +7,18 @@ import StartApp
 import Signal exposing (Address)
 
 type Action = NoOp
-            | SelectLocation Location
+            | SelectLocation Int
+
 
 type alias Location = { name : String
                       , latitude : Float
                       , longitude : Float
+                      , isSelected : Bool
                       , id : Int
                       }
 
 
 type alias Model = { locations : List Location
-                   , selectedLocation : Maybe Location
                    , nextID : Int
                    }
 
@@ -28,9 +29,9 @@ initialModel = { locations = [
                   , latitude = -22.9068
                   , longitude = -43.1729
                   , id = 1
+                  , isSelected = False
                   }
                  ]
-               , selectedLocation = Nothing
                , nextID = 2
                }
 
@@ -42,29 +43,32 @@ update action model =
       model
 
     SelectLocation id ->
-      { model | selectedLocation <- Just id }
+      let
+        updateSelection loc = { loc | isSelected <- loc.id == id }
+      in
+        { model | locations <- List.map updateSelection model.locations }
 
 
 -- VIEW --
 
 
-locationItem : Address Action -> Maybe Location -> Location -> Html
-locationItem address selectedLocation location =
-  li []
-    [ span
-        [ onClick address (SelectLocation location) ]
-        [ text location.name  ]
-    ]
+locationItem : Address Action ->  Location -> Html
+locationItem address location =
+  li [ classList [ ("selected", location.isSelected) ] ]
+     [ span
+       [ onClick address (SelectLocation location.id) ]
+       [ text location.name ]
+     ]
 
 
-weatherView : Model -> Html
-weatherView model =
-  case model.selectedLocation of
+weatherView : Maybe Location -> Html
+weatherView location =
+  case location of
     Nothing ->
       noLocationSelected
 
-    Just location ->
-      selectedLocation location
+    Just loc ->
+      selectedLocation loc
 
 
 noLocationSelected : Html
@@ -79,22 +83,23 @@ selectedLocation location =
 
 locationList : Address Action -> Model -> Html
 locationList address model =
-  let
-    maybeSelected = locationItem address model.selectedLocation
-  in
-    ul
-      []
-      (List.map maybeSelected model.locations)
+  ul [ ] (List.map (locationItem address) model.locations)
 
 
 view : Address Action -> Model -> Html
 view address model =
-  div
-    [ class "container" ]
-    [
-      locationList address model
-    , weatherView model
-    ]
+  let
+    selectedLocation =
+      model.locations
+        |> List.filter .isSelected
+        |> List.head
+  in
+    div
+      [ class "container" ]
+      [
+        locationList address model
+      , weatherView selectedLocation
+      ]
 
 
 main = StartApp.start { view = view
