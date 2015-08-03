@@ -1834,7 +1834,7 @@ Elm.Forecast.make = function (_elm) {
               _L.fromArray([]),
               _L.fromArray([$Html.text("strangely empty")]));}
          _U.badCase($moduleName,
-         "between lines 85 and 90");
+         "between lines 87 and 92");
       }();
    };
    var selectedLocation = F2(function (location,
@@ -1857,25 +1857,31 @@ Elm.Forecast.make = function (_elm) {
             case "Nothing":
             return noLocationSelected;}
          _U.badCase($moduleName,
-         "between lines 65 and 70");
+         "between lines 67 and 72");
       }();
    });
    var locationItem = F2(function (address,
    location) {
-      return A2($Html.li,
+      return A2($Html.div,
       _L.fromArray([$Html$Attributes.classList(_L.fromArray([{ctor: "_Tuple2"
                                                              ,_0: "selected"
-                                                             ,_1: location.isSelected}]))]),
-      _L.fromArray([A2($Html.span,
-      _L.fromArray([A2($Html$Events.onClick,
-      $Forecast$DarkSkySignal.queryForecast.address,
-      $Maybe.Just(location))]),
-      _L.fromArray([$Html.text(location.name)]))]));
+                                                             ,_1: location.isSelected}
+                                                            ,{ctor: "_Tuple2"
+                                                             ,_0: "location"
+                                                             ,_1: true}]))
+                   ,A2($Html$Events.onClick,
+                   $Forecast$DarkSkySignal.queryForecast.address,
+                   $Maybe.Just(location))]),
+      _L.fromArray([A2($Html.div,
+      _L.fromArray([$Html$Attributes.$class("data")]),
+      _L.fromArray([A2($Html.div,
+      _L.fromArray([$Html$Attributes.$class("place")]),
+      _L.fromArray([$Html.text(location.name)]))]))]));
    });
    var locationList = F2(function (address,
    model) {
-      return A2($Html.ul,
-      _L.fromArray([]),
+      return A2($Html.div,
+      _L.fromArray([$Html$Attributes.$class("locations")]),
       A2($List.map,
       locationItem(address),
       model.locations));
@@ -1936,7 +1942,7 @@ Elm.Forecast.make = function (_elm) {
                  _v6._0,
                  model);}
             _U.badCase($moduleName,
-            "on line 119, column 40 to 59");
+            "on line 121, column 40 to 59");
          }();
       }),
       initialModel,

@@ -1,4 +1,35 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto:400,300,500);
+
 body {
-    background: green;
-    text: yellow;
+    background: #1a1a1a;
+    color: white;
+    font-family: "Roboto", sans-serif;
+    font-weight: 400;
+}
+
+.container > * {
+    float: left;
+}
+
+.container .locations {
+    width: 300px;
+}
+
+.container .locations .location {
+    height: 150px;
+}
+
+.container .locations .location.selected {
+    background: #383838;
+}
+
+.container .locations .location .data {
+    background: #e9b96f;
+    height: 100%;
+    margin: 10px 10px;
+    border-radius: 5px 5px;
+}
+
+.container .locations .location .data .place {
+    font-size: 1.2em;
 }

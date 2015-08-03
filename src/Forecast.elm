@@ -53,11 +53,13 @@ update action model =
 
 locationItem : Address Action -> Location -> Html
 locationItem address location =
-  li [ classList [ ("selected", location.isSelected) ] ]
-     [ span
-       [ onClick queryForecast.address (Just location) ]
-       [ text location.name ]
-     ]
+  div
+    [ classList [ ("selected", location.isSelected), ("location", True) ]
+    , onClick queryForecast.address (Just location) ]
+    [
+      div [ class "data" ]
+          [ div [ class "place" ] [ text location.name ] ]
+    ]
 
 
 weatherView : Maybe Location -> Maybe CompleteForecast -> Html
@@ -92,7 +94,7 @@ completeForecast cf =
 
 locationList : Address Action -> Model -> Html
 locationList address model =
-  ul [ ] (List.map (locationItem address) model.locations)
+  div [ class "locations" ] (List.map (locationItem address) model.locations)
 
 
 view : Address Action -> Model -> (Maybe Location) -> (Maybe CompleteForecast) -> Html
@@ -100,7 +102,7 @@ view address model selectedLocation forecast =
   div
   [ class "container" ]
   [
-   locationList address model
+    locationList address model
   , weatherView selectedLocation forecast
   ]
 
