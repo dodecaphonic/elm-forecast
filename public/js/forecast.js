@@ -1992,7 +1992,7 @@ Elm.Forecast.DarkSky.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
-   var PossibleForecast = F7(function (a,
+   var DailyForecast = F7(function (a,
    b,
    c,
    d,
@@ -2008,8 +2008,8 @@ Elm.Forecast.DarkSky.make = function (_elm) {
              ,temperatureMin: f
              ,time: a};
    });
-   var possibleForecastDecoder = A8($Json$Decode.object7,
-   PossibleForecast,
+   var dailyForecastDecoder = A8($Json$Decode.object7,
+   DailyForecast,
    A2($Json$Decode._op[":="],
    "time",
    $Json$Decode.$int),
@@ -2083,8 +2083,38 @@ Elm.Forecast.DarkSky.make = function (_elm) {
              ,icon: b
              ,summary: a};
    });
-   var timespanForecastDecoder = A4($Json$Decode.object3,
-   TimespanForecast,
+   var timespanForecastDecoder = function (dataDecoder) {
+      return A4($Json$Decode.object3,
+      TimespanForecast,
+      A2($Json$Decode._op[":="],
+      "summary",
+      $Json$Decode.string),
+      A2($Json$Decode._op[":="],
+      "icon",
+      $Json$Decode.string),
+      A2($Json$Decode._op[":="],
+      "data",
+      $Json$Decode.list(dataDecoder)));
+   };
+   var HourlyForecast = F6(function (a,
+   b,
+   c,
+   d,
+   e,
+   f) {
+      return {_: {}
+             ,icon: c
+             ,precipIntensity: e
+             ,precipProbability: f
+             ,summary: b
+             ,temperature: d
+             ,time: a};
+   });
+   var hourlyForecastDecoder = A7($Json$Decode.object6,
+   HourlyForecast,
+   A2($Json$Decode._op[":="],
+   "time",
+   $Json$Decode.$int),
    A2($Json$Decode._op[":="],
    "summary",
    $Json$Decode.string),
@@ -2092,8 +2122,14 @@ Elm.Forecast.DarkSky.make = function (_elm) {
    "icon",
    $Json$Decode.string),
    A2($Json$Decode._op[":="],
-   "data",
-   $Json$Decode.list(possibleForecastDecoder)));
+   "temperature",
+   $Json$Decode.$float),
+   A2($Json$Decode._op[":="],
+   "precipIntensity",
+   $Json$Decode.$float),
+   A2($Json$Decode._op[":="],
+   "precipProbability",
+   $Json$Decode.$float));
    var CompleteForecast = F6(function (a,
    b,
    c,
@@ -2124,16 +2160,17 @@ Elm.Forecast.DarkSky.make = function (_elm) {
    forecastDecoder),
    A2($Json$Decode._op[":="],
    "hourly",
-   timespanForecastDecoder),
+   timespanForecastDecoder(hourlyForecastDecoder)),
    A2($Json$Decode._op[":="],
    "daily",
-   timespanForecastDecoder)));
+   timespanForecastDecoder(dailyForecastDecoder))));
    _elm.Forecast.DarkSky.values = {_op: _op
                                   ,completeForecastDecoder: completeForecastDecoder
                                   ,CompleteForecast: CompleteForecast
                                   ,TimespanForecast: TimespanForecast
                                   ,Forecast: Forecast
-                                  ,PossibleForecast: PossibleForecast};
+                                  ,DailyForecast: DailyForecast
+                                  ,HourlyForecast: HourlyForecast};
    return _elm.Forecast.DarkSky.values;
 };
 Elm.Forecast = Elm.Forecast || {};

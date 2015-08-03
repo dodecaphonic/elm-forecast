@@ -1,4 +1,4 @@
-module Forecast.DarkSky(completeForecastDecoder, CompleteForecast, TimespanForecast, Forecast, PossibleForecast) where
+module Forecast.DarkSky(completeForecastDecoder, CompleteForecast, TimespanForecast, Forecast, DailyForecast, HourlyForecast) where
 
 
 import Json.Decode as Json exposing ((:=))
@@ -8,14 +8,24 @@ type alias CompleteForecast = { latitude : Float
                               , longitude : Float
                               , timezone : String
                               , currently : Forecast
-                              , hourly : TimespanForecast
-                              , daily : TimespanForecast
+                              , hourly : TimespanForecast HourlyForecast
+                              , daily : TimespanForecast DailyForecast
                               }
 
 
-type alias TimespanForecast = { summary : String
-                              , icon : String
-                              , forecasts : List PossibleForecast }
+type alias HourlyForecast = { time : Int
+                            , summary : String
+                            , icon : String
+                            , temperature : Float
+                            , precipIntensity : Float
+                            , precipProbability : Float
+                            }
+
+
+type alias TimespanForecast ft = { summary : String
+                                 , icon : String
+                                 , forecasts : List ft
+                                 }
 
 
 type alias Forecast = { time : Int
@@ -29,23 +39,35 @@ type alias Forecast = { time : Int
                       }
 
 
-type alias PossibleForecast = { time : Int
-                              , summary : String
-                              , icon : String
-                              , precipIntensity : Float
-                              , precipProbability : Float
-                              , temperatureMin : Float
-                              , temperatureMax : Float
-                              }
+type alias DailyForecast = { time : Int
+                           , summary : String
+                           , icon : String
+                           , precipIntensity : Float
+                           , precipProbability : Float
+                           , temperatureMin : Float
+                           , temperatureMax : Float
+                           }
 
 
-timespanForecastDecoder : Json.Decoder TimespanForecast
-timespanForecastDecoder =
+timespanForecastDecoder : Json.Decoder ft -> Json.Decoder (TimespanForecast ft)
+timespanForecastDecoder dataDecoder =
   Json.object3
     TimespanForecast
     ("summary" := Json.string)
     ("icon" := Json.string)
-    ("data" := Json.list possibleForecastDecoder)
+    ("data" := Json.list dataDecoder)
+
+
+hourlyForecastDecoder : Json.Decoder HourlyForecast
+hourlyForecastDecoder =
+  Json.object6
+    HourlyForecast
+    ("time" := Json.int)
+    ("summary" := Json.string)
+    ("icon" := Json.string)
+    ("temperature" := Json.float)
+    ("precipIntensity" := Json.float)
+    ("precipProbability" := Json.float)
 
 
 forecastDecoder : Json.Decoder Forecast
@@ -62,10 +84,10 @@ forecastDecoder =
     ("windBearing" := Json.float)
 
 
-possibleForecastDecoder : Json.Decoder PossibleForecast
-possibleForecastDecoder =
+dailyForecastDecoder : Json.Decoder DailyForecast
+dailyForecastDecoder =
   Json.object7
-    PossibleForecast
+    DailyForecast
     ("time" := Json.int)
     ("summary" := Json.string)
     ("icon" := Json.string)
@@ -84,5 +106,5 @@ completeForecastDecoder =
       ("longitude" := Json.float)
       ("timezone" := Json.string)
       ("currently" := forecastDecoder)
-      ("hourly" := timespanForecastDecoder)
-      ("daily" := timespanForecastDecoder)
+      ("hourly" := (timespanForecastDecoder hourlyForecastDecoder))
+      ("daily" := (timespanForecastDecoder dailyForecastDecoder))
