@@ -15,10 +15,12 @@ import Forecast.DarkSky exposing (CompleteForecast)
 
 type Action = NoOp
             | SelectLocation Int
+            | UpdateForecast (Maybe CompleteForecast)
 
 
 type alias Model = { locations : List Location
                    , nextID : Int
+                   , currentForecast : (Maybe CompleteForecast)
                    }
 
 
@@ -32,6 +34,7 @@ initialModel = { locations = [
                   }
                  ]
                , nextID = 2
+               , currentForecast = Nothing
                }
 
 
@@ -46,6 +49,9 @@ update action model =
         updateSelection loc = { loc | isSelected <- loc.id == id }
       in
         { model | locations <- List.map updateSelection model.locations }
+
+    UpdateForecast cf ->
+      { model | currentForecast <- cf }
 
 
 -- VIEW --
@@ -97,30 +103,50 @@ locationList address model =
   div [ class "locations" ] (List.map (locationItem address) model.locations)
 
 
-view : Address Action -> Model -> (Maybe Location) -> (Maybe CompleteForecast) -> Html
-view address model selectedLocation forecast =
-  div
-  [ class "container" ]
-  [
-    locationList address model
-  , weatherView selectedLocation forecast
-  ]
+view : Address Action -> Model -> Html
+view address model =
+  let
+    selectedLocation =
+      model.locations
+        |> List.filter .isSelected
+        |> List.head
+  in
+    div
+    [ class "container" ]
+    [
+      locationList address model
+    , weatherView selectedLocation model.currentForecast
+    ]
+
+
+actions : Signal.Mailbox (Maybe Action)
+actions =
+  Signal.mailbox Nothing
+
+
+updates =
+  let
+    locationToAction loc =
+      (Maybe.map (\l -> Just (SelectLocation l.id)) loc)
+        |> Maybe.withDefault (Just NoOp)
+
+    forecastToAction = Signal.map (\cf -> Just (UpdateForecast cf)) newForecast.signal
+    queryToAction = Signal.map locationToAction queryForecast.signal
+  in
+    Signal.mergeMany [actions.signal, queryToAction, forecastToAction]
 
 
 main : Signal Html
 main =
   let
-    actions =
-      Signal.mailbox Nothing
-
     address =
       Signal.forwardTo actions.address Just
 
     model =
       Signal.foldp
-              (\(Just action) model -> update action model)
-              initialModel
-              actions.signal
+        (\(Just action) model -> update action model)
+        initialModel
+        updates
   in
-    Signal.map3 (view address) model queryForecast.signal newForecast.signal
+    Signal.map (view address) model
 

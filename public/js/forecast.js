@@ -1822,6 +1822,7 @@ Elm.Forecast.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
+   var actions = $Signal.mailbox($Maybe.Nothing);
    var completeForecast = function (cf) {
       return function () {
          switch (cf.ctor)
@@ -1834,7 +1835,7 @@ Elm.Forecast.make = function (_elm) {
               _L.fromArray([]),
               _L.fromArray([$Html.text("strangely empty")]));}
          _U.badCase($moduleName,
-         "between lines 87 and 92");
+         "between lines 93 and 98");
       }();
    };
    var selectedLocation = F2(function (location,
@@ -1857,7 +1858,7 @@ Elm.Forecast.make = function (_elm) {
             case "Nothing":
             return noLocationSelected;}
          _U.badCase($moduleName,
-         "between lines 67 and 72");
+         "between lines 73 and 78");
       }();
    });
    var locationItem = F2(function (address,
@@ -1886,18 +1887,21 @@ Elm.Forecast.make = function (_elm) {
       locationItem(address),
       model.locations));
    });
-   var view = F4(function (address,
-   model,
-   selectedLocation,
-   forecast) {
-      return A2($Html.div,
-      _L.fromArray([$Html$Attributes.$class("container")]),
-      _L.fromArray([A2(locationList,
-                   address,
-                   model)
-                   ,A2(weatherView,
-                   selectedLocation,
-                   forecast)]));
+   var view = F2(function (address,
+   model) {
+      return function () {
+         var selectedLocation = $List.head($List.filter(function (_) {
+            return _.isSelected;
+         })(model.locations));
+         return A2($Html.div,
+         _L.fromArray([$Html$Attributes.$class("container")]),
+         _L.fromArray([A2(locationList,
+                      address,
+                      model)
+                      ,A2(weatherView,
+                      selectedLocation,
+                      model.currentForecast)]));
+      }();
    });
    var update = F2(function (action,
    model) {
@@ -1916,12 +1920,17 @@ Elm.Forecast.make = function (_elm) {
                                     updateSelection,
                                     model.locations)]],
                  model);
-              }();}
+              }();
+            case "UpdateForecast":
+            return _U.replace([["currentForecast"
+                               ,action._0]],
+              model);}
          _U.badCase($moduleName,
-         "between lines 40 and 48");
+         "between lines 43 and 54");
       }();
    });
    var initialModel = {_: {}
+                      ,currentForecast: $Maybe.Nothing
                       ,locations: _L.fromArray([{_: {}
                                                 ,id: 1
                                                 ,isSelected: false
@@ -1929,43 +1938,68 @@ Elm.Forecast.make = function (_elm) {
                                                 ,longitude: -43.1729
                                                 ,name: "Rio de Janeiro"}])
                       ,nextID: 2};
-   var main = function () {
-      var actions = $Signal.mailbox($Maybe.Nothing);
-      var address = A2($Signal.forwardTo,
-      actions.address,
-      $Maybe.Just);
-      var model = A3($Signal.foldp,
-      F2(function (_v6,model) {
-         return function () {
-            switch (_v6.ctor)
-            {case "Just": return A2(update,
-                 _v6._0,
-                 model);}
-            _U.badCase($moduleName,
-            "on line 121, column 40 to 59");
-         }();
-      }),
-      initialModel,
-      actions.signal);
-      return A4($Signal.map3,
-      view(address),
-      model,
-      $Forecast$DarkSkySignal.queryForecast.signal,
-      $Forecast$DarkSkySignal.newForecast.signal);
-   }();
-   var Model = F2(function (a,b) {
+   var Model = F3(function (a,
+   b,
+   c) {
       return {_: {}
+             ,currentForecast: c
              ,locations: a
              ,nextID: b};
    });
+   var UpdateForecast = function (a) {
+      return {ctor: "UpdateForecast"
+             ,_0: a};
+   };
    var SelectLocation = function (a) {
       return {ctor: "SelectLocation"
              ,_0: a};
    };
    var NoOp = {ctor: "NoOp"};
+   var updates = function () {
+      var forecastToAction = A2($Signal.map,
+      function (cf) {
+         return $Maybe.Just(UpdateForecast(cf));
+      },
+      $Forecast$DarkSkySignal.newForecast.signal);
+      var locationToAction = function (loc) {
+         return $Maybe.withDefault($Maybe.Just(NoOp))(A2($Maybe.map,
+         function (l) {
+            return $Maybe.Just(SelectLocation(l.id));
+         },
+         loc));
+      };
+      var queryToAction = A2($Signal.map,
+      locationToAction,
+      $Forecast$DarkSkySignal.queryForecast.signal);
+      return $Signal.mergeMany(_L.fromArray([actions.signal
+                                            ,queryToAction
+                                            ,forecastToAction]));
+   }();
+   var main = function () {
+      var model = A3($Signal.foldp,
+      F2(function (_v7,model) {
+         return function () {
+            switch (_v7.ctor)
+            {case "Just": return A2(update,
+                 _v7._0,
+                 model);}
+            _U.badCase($moduleName,
+            "on line 147, column 34 to 53");
+         }();
+      }),
+      initialModel,
+      updates);
+      var address = A2($Signal.forwardTo,
+      actions.address,
+      $Maybe.Just);
+      return A2($Signal.map,
+      view(address),
+      model);
+   }();
    _elm.Forecast.values = {_op: _op
                           ,NoOp: NoOp
                           ,SelectLocation: SelectLocation
+                          ,UpdateForecast: UpdateForecast
                           ,Model: Model
                           ,initialModel: initialModel
                           ,update: update
@@ -1976,6 +2010,8 @@ Elm.Forecast.make = function (_elm) {
                           ,completeForecast: completeForecast
                           ,locationList: locationList
                           ,view: view
+                          ,actions: actions
+                          ,updates: updates
                           ,main: main};
    return _elm.Forecast.values;
 };
