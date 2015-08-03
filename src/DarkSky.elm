@@ -20,7 +20,7 @@ type alias TimespanForecast = { summary : String
 
 type alias Forecast = { time : Int
                       , summary : String
-                      -- , icon : String
+                      , icon : String
                       , precipIntensity : Float
                       , precipProbability : Float
                       , temperature : Float
@@ -50,11 +50,11 @@ timespanForecastDecoder =
 
 forecastDecoder : Json.Decoder Forecast
 forecastDecoder =
-  Json.object7
+  Json.object8
     Forecast
     ("time" := Json.int)
     ("summary" := Json.string)
---    ("icon" := Json.string)
+    ("icon" := Json.string)
     ("precipIntensity" := Json.float)
     ("precipProbability" := Json.float)
     ("temperature" := Json.float)
