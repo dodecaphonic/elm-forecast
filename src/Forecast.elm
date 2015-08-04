@@ -9,6 +9,7 @@ import Task
 import Http
 
 import Forecast.DarkSkySignal exposing (queryForecast, newForecast)
+import Forecast.Geocoding exposing (queryGeocoding, newGeocoding, GeoLocation)
 import Forecast.Location exposing (Location)
 import Forecast.DarkSky as DS
 import Forecast.Widgets as W
@@ -17,11 +18,15 @@ import Forecast.Widgets as W
 type Action = NoOp
             | SelectLocation Int
             | UpdateForecast (Maybe DS.CompleteForecast)
+            | GeocodeLocation String
+            | ShowGeocodingOptions (List GeoLocation)
 
 
 type alias Model = { locations : List Location
                    , nextID : Int
                    , currentForecast : (Maybe DS.CompleteForecast)
+                   , currentGeocodingOptions : (List GeoLocation)
+                   , geocodingInput : String
                    }
 
 
@@ -31,7 +36,7 @@ initialModel = { locations = [
                   , latitude = -22.9068
                   , longitude = -43.1729
                   , id = 1
-                  , isSelected = True
+                  , isSelected = False
                   }
                   ,
                   { name = "London"
@@ -43,6 +48,8 @@ initialModel = { locations = [
                  ]
                , nextID = 3
                , currentForecast = Nothing
+               , currentGeocodingOptions = []
+               , geocodingInput = ""
                }
 
 
@@ -62,6 +69,12 @@ update action model =
 
     UpdateForecast cf ->
       { model | currentForecast <- cf }
+
+    ShowGeocodingOptions opts ->
+      { model | currentGeocodingOptions <- opts }
+
+    GeocodeLocation loc ->
+      { model | geocodingInput <- loc }
 
 
 -- VIEW --
@@ -140,10 +153,16 @@ updates =
       (Maybe.map (\l -> Just (SelectLocation l.id)) loc)
         |> Maybe.withDefault (Just NoOp)
 
-    forecastToAction = Signal.map (\cf -> Just (UpdateForecast cf)) newForecast.signal
-    queryToAction = Signal.map locationToAction queryForecast.signal
+    geocodingToAction geo =
+      (Maybe.map (\g -> Just (ShowGeocodingOptions g)) geo)
+        |> Maybe.withDefault (Just (ShowGeocodingOptions []))
+
+    nfs = Signal.map (\cf -> Just (UpdateForecast cf)) newForecast.signal
+    qfs = Signal.map locationToAction queryForecast.signal
+    qgcs = Signal.map (\add -> Just (GeocodeLocation add)) queryGeocoding.signal
+    ngcs = Signal.map (\add -> Just (GeocodeLocation add)) queryGeocoding.signal
   in
-    Signal.mergeMany [actions.signal, queryToAction, forecastToAction]
+    Signal.mergeMany [actions.signal, qfs, nfs, qgcs, ngcs]
 
 
 main : Signal Html

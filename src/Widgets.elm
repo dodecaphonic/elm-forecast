@@ -36,7 +36,7 @@ summary location forecast =
     [ class "summary" ]
     [ i [ class ("conditions wi " ++ (summaryIcon forecast.icon)) ] [ ]
     , span [ class "location" ] [ text location.name ]
-    , span [ class "temperature" ] [ text ((toString forecast.temperature) ++ "º") ]
+    , span [ class "temperature" ] [ text ((toString <| truncate forecast.temperature) ++ "º") ]
     ]
 
 
@@ -141,7 +141,7 @@ summaryIcon iconName =
       "wi-cloudy"
 
     "partly-cloudy-night" ->
-      "wi-clody"
+      "wi-cloudy"
 
     otherwise ->
       "wi-sunset"

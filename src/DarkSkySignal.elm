@@ -25,11 +25,12 @@ queryForecast = Signal.mailbox Nothing
 
 fetchOne : (Maybe Location) -> Task Http.Error (Maybe CompleteForecast)
 fetchOne location =
-  let
-    (lat, lon) = Maybe.map (\l -> (l.latitude, l.longitude)) location
-                   |> Maybe.withDefault (-22.9068, -43.1729)
-  in
-    Http.get completeForecastDecoder (darkSky lat lon)
+  case location of
+    Nothing ->
+      Task.succeed Nothing
+
+    Just loc ->
+      Http.get completeForecastDecoder (darkSky loc.latitude loc.longitude)
 
 
 darkSky : Float -> Float -> String
