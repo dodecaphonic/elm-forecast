@@ -1,7 +1,7 @@
 module Forecast.DarkSky(completeForecastDecoder, CompleteForecast, TimespanForecast, Forecast, DailyForecast, HourlyForecast) where
 
 
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Json exposing ((:=), andThen)
 
 
 type alias CompleteForecast = { latitude : Float
@@ -36,6 +36,11 @@ type alias Forecast = { time : Int
                       , temperature : Float
                       , windSpeed : Float
                       , windBearing : Float
+                      , humidity : Float
+                      , visibility : Float
+                      , cloudCover : Float
+                      , pressure : Float
+                      , ozone : Float
                       }
 
 
@@ -72,16 +77,19 @@ hourlyForecastDecoder =
 
 forecastDecoder : Json.Decoder Forecast
 forecastDecoder =
-  Json.object8
-    Forecast
-    ("time" := Json.int)
-    ("summary" := Json.string)
-    ("icon" := Json.string)
-    ("precipIntensity" := Json.float)
-    ("precipProbability" := Json.float)
-    ("temperature" := Json.float)
-    ("windSpeed" := Json.float)
-    ("windBearing" := Json.float)
+  Json.object1 Forecast ("time" := Json.int)
+    `apply` ("summary" := Json.string)
+    `apply` ("icon" := Json.string)
+    `apply` ("precipIntensity" := Json.float)
+    `apply` ("precipProbability" := Json.float)
+    `apply` ("temperature" := Json.float)
+    `apply` ("windSpeed" := Json.float)
+    `apply` ("windBearing" := Json.float)
+    `apply` ("humidity" := Json.float)
+    `apply` ("visibility" := Json.float)
+    `apply` ("cloudCover" := Json.float)
+    `apply` ("pressure" := Json.float)
+    `apply` ("ozone" := Json.float)
 
 
 dailyForecastDecoder : Json.Decoder DailyForecast
@@ -108,3 +116,8 @@ completeForecastDecoder =
       ("currently" := forecastDecoder)
       ("hourly" := (timespanForecastDecoder hourlyForecastDecoder))
       ("daily" := (timespanForecastDecoder dailyForecastDecoder))
+
+
+apply : Json.Decoder (a -> b) -> Json.Decoder a -> Json.Decoder b
+apply func value =
+  Json.object2 (<|) func value

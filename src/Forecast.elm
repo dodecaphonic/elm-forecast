@@ -10,17 +10,18 @@ import Http
 
 import Forecast.DarkSkySignal exposing (queryForecast, newForecast)
 import Forecast.Location exposing (Location)
-import Forecast.DarkSky exposing (CompleteForecast)
+import Forecast.DarkSky as DS
+import Forecast.Widgets as W
 
 
 type Action = NoOp
             | SelectLocation Int
-            | UpdateForecast (Maybe CompleteForecast)
+            | UpdateForecast (Maybe DS.CompleteForecast)
 
 
 type alias Model = { locations : List Location
                    , nextID : Int
-                   , currentForecast : (Maybe CompleteForecast)
+                   , currentForecast : (Maybe DS.CompleteForecast)
                    }
 
 
@@ -30,10 +31,17 @@ initialModel = { locations = [
                   , latitude = -22.9068
                   , longitude = -43.1729
                   , id = 1
+                  , isSelected = True
+                  }
+                  ,
+                  { name = "London"
+                  , latitude = 51.5072
+                  , longitude = -0.1275
+                  , id = 2
                   , isSelected = False
                   }
                  ]
-               , nextID = 2
+               , nextID = 3
                , currentForecast = Nothing
                }
 
@@ -48,7 +56,9 @@ update action model =
       let
         updateSelection loc = { loc | isSelected <- loc.id == id }
       in
-        { model | locations <- List.map updateSelection model.locations }
+        { model | locations <- List.map updateSelection model.locations
+                , currentForecast <- Nothing
+        }
 
     UpdateForecast cf ->
       { model | currentForecast <- cf }
@@ -57,18 +67,18 @@ update action model =
 -- VIEW --
 
 
-locationItem : Address Action -> Location -> Html
+locationItem : Address (Maybe Location) -> Location -> Html
 locationItem address location =
   div
     [ classList [ ("selected", location.isSelected), ("location", True) ]
-    , onClick queryForecast.address (Just location) ]
-    [
-      div [ class "data" ]
-          [ div [ class "place" ] [ text location.name ] ]
+    , onClick address (Just location) ]
+    [ div
+        [ class "data" ]
+        [ div [ class "place" ] [ text location.name ] ]
     ]
 
 
-weatherView : Maybe Location -> Maybe CompleteForecast -> Html
+weatherView : Maybe Location -> Maybe DS.CompleteForecast -> Html
 weatherView location forecast =
   case location of
     Nothing ->
@@ -80,25 +90,42 @@ weatherView location forecast =
 
 noLocationSelected : Html
 noLocationSelected =
-  div [ ] [ text "Please select a location." ]
+  div [ class "forecast-container" ] [ text "Please select a location." ]
 
 
-selectedLocation : Location -> Maybe CompleteForecast -> Html
+selectedLocation : Location -> Maybe DS.CompleteForecast -> Html
 selectedLocation location forecast =
-  div [ ] [(completeForecast forecast)]
+  div [ class "forecast-container" ] [(completeForecast location forecast)]
 
 
-completeForecast : Maybe CompleteForecast -> Html
-completeForecast cf =
+completeForecast : Location -> Maybe DS.CompleteForecast -> Html
+completeForecast location cf =
   case cf of
     Nothing ->
       div [ ] [ text "strangely empty" ]
 
     Just forecast ->
-      div [ ] [ text "something" ]
+      div
+        [ ]
+        [ currently location forecast.currently
+        , hourly forecast.hourly
+        ]
 
 
-locationList : Address Action -> Model -> Html
+currently : Location -> DS.Forecast -> Html
+currently location forecast =
+  div
+    [ class "forecast" ]
+    [ W.summary location forecast
+    , W.details forecast
+    ]
+
+
+hourly : DS.TimespanForecast DS.HourlyForecast -> Html
+hourly ts = div [ ] [ ]
+
+
+locationList : Address (Maybe Location) -> Model -> Html
 locationList address model =
   div [ class "locations" ] (List.map (locationItem address) model.locations)
 
@@ -114,7 +141,7 @@ view address model =
     div
     [ class "container" ]
     [
-      locationList address model
+      locationList queryForecast.address model
     , weatherView selectedLocation model.currentForecast
     ]
 
@@ -149,4 +176,3 @@ main =
         updates
   in
     Signal.map (view address) model
-
