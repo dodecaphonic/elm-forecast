@@ -73,7 +73,7 @@ locationItem address location =
     [ classList [ ("selected", location.isSelected), ("location", True) ]
     , onClick address (Just location) ]
     [ div
-        [ class "data" ]
+        [ class "data temp-warm" ]
         [ div [ class "place" ] [ text location.name ] ]
     ]
 
@@ -102,27 +102,10 @@ completeForecast : Location -> Maybe DS.CompleteForecast -> Html
 completeForecast location cf =
   case cf of
     Nothing ->
-      div [ ] [ text "strangely empty" ]
+      div [ ] [ text "Weather goes here." ]
 
     Just forecast ->
-      div
-        [ ]
-        [ currently location forecast.currently
-        , hourly forecast.hourly
-        ]
-
-
-currently : Location -> DS.Forecast -> Html
-currently location forecast =
-  div
-    [ class "forecast" ]
-    [ W.summary location forecast
-    , W.details forecast
-    ]
-
-
-hourly : DS.TimespanForecast DS.HourlyForecast -> Html
-hourly ts = div [ ] [ ]
+      W.forecast location forecast
 
 
 locationList : Address (Maybe Location) -> Model -> Html

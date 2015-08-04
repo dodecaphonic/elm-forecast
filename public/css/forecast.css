@@ -32,7 +32,6 @@ body {
 }
 
 .container .locations .location .data {
-    background: #e9b96f;
     height: 140px;
     margin: 10px 10px;
     border-radius: 5px 5px;
@@ -47,7 +46,6 @@ body {
 }
 
 .container .forecast-container .forecast {
-    background: #e9b96f;
     border-radius: 5px 5px;
     -webkit-flex: 1 1 auto;
     flex: 1 1 auto;
@@ -131,4 +129,22 @@ body {
 
 .container .forecast-container .forecast .details .detail .text .title {
     display: block;
+}
+
+.temp-hot {
+    background: #e9b96f;
+}
+
+.temp-warm {
+    background: #ecc055;
+}
+
+.temp-cool {
+    background: #afdcd8;
+    color: black;
+}
+
+.temp-cold {
+    background: #fafafa;
+    color: black;
 }

@@ -1,4 +1,4 @@
-module Forecast.Widgets(summary, details) where
+module Forecast.Widgets(forecast) where
 
 
 import Html exposing (div, span, i, text, Html)
@@ -6,6 +6,28 @@ import Html.Attributes exposing (class)
 
 import Forecast.DarkSky as DS
 import Forecast.Location exposing (Location)
+
+
+forecast : Location -> DS.CompleteForecast -> Html
+forecast location forecast =
+  div
+    [ ]
+    [ currently location forecast.currently
+    , hourly forecast.hourly
+    ]
+
+
+currently : Location -> DS.Forecast -> Html
+currently location forecast =
+  div
+    [ class ("forecast " ++ (temperature forecast.temperature)) ]
+    [ summary location forecast
+    , details forecast
+    ]
+
+
+hourly : DS.TimespanForecast DS.HourlyForecast -> Html
+hourly ts = div [ ] [ ]
 
 
 summary : Location -> DS.Forecast -> Html
@@ -136,3 +158,11 @@ dataPoint iconClass title subtitle =
           , span [ class "subtitle" ] [ text subtitle ]
           ]
     ]
+
+
+temperature : Float -> String
+temperature temp =
+  if | temp <= 0 -> "temp-cold"
+     | temp > 0 && temp <= 15 -> "temp-cool"
+     | temp > 15 && temp < 30 -> "temp-warm"
+     | otherwise -> "temp-hot"
