@@ -61,20 +61,20 @@ update action model =
 
     SelectLocation id ->
       let
-        updateSelection loc = { loc | isSelected <- loc.id == id }
+        updateSelection loc = { loc | isSelected = loc.id == id }
       in
-        { model | locations <- List.map updateSelection model.locations
-                , currentForecast <- Nothing
+        { model | locations = List.map updateSelection model.locations
+                , currentForecast = Nothing
         }
 
     UpdateForecast cf ->
-      { model | currentForecast <- cf }
+      { model | currentForecast = cf }
 
     ShowGeocodingOptions opts ->
-      { model | currentGeocodingOptions <- opts }
+      { model | currentGeocodingOptions = opts }
 
     GeocodeLocation loc ->
-      { model | geocodingInput <- loc }
+      { model | geocodingInput = loc }
 
 
 -- VIEW --
@@ -171,9 +171,12 @@ main =
     address =
       Signal.forwardTo actions.address Just
 
+    modelShouldChange ma model =
+      Maybe.map (\action -> update action model) ma |> Maybe.withDefault model
+
     model =
       Signal.foldp
-        (\(Just action) model -> update action model)
+        modelShouldChange
         initialModel
         updates
   in

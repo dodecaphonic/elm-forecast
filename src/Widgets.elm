@@ -62,30 +62,28 @@ wind speed bearing =
 
 bearingDescription : Float -> String
 bearingDescription bearing =
-  if
-    | bearing == 0 || bearing == 360 -> "North"
-    | bearing > 0 && bearing < 90 -> "North East"
-    | bearing == 90 -> "North East"
-    | bearing > 90 && bearing < 180 -> "South East"
-    | bearing == 180 -> "South"
-    | bearing > 180 && bearing < 270 -> "South West"
-    | bearing == 270 -> "West"
-    | bearing > 270 && bearing < 360 -> "North West"
+  if bearing == 0 || bearing == 360 then "North"
+  else if bearing > 0 && bearing < 90 then "North East"
+  else if bearing == 90 then "North East"
+  else if bearing > 90 && bearing < 180 then "South East"
+  else if bearing == 180 then "South"
+  else if bearing > 180 && bearing < 270 then "South West"
+  else if bearing == 270 then "West"
+  else "North West"
 
 
 windBearing : Float -> String
 windBearing bearing =
   let
     icon =
-      if
-        | bearing == 0 || bearing == 360 -> "wi-wind-default _0-deg"
-        | bearing > 0 && bearing < 90 -> "wi-wind-default _15-deg"
-        | bearing == 90 -> "wi-wind-default _90-deg"
-        | bearing > 90 && bearing < 180 -> "wi-wind-default _120-deg"
-        | bearing == 180 -> "wi-wind-default _180-deg"
-        | bearing > 180 && bearing < 270 -> "wi-wind-default _210-deg"
-        | bearing == 270 -> "wi-wind-default _270-deg"
-        | bearing > 270 && bearing < 360 -> "wi-wind-default _345-deg"
+      if bearing == 0 || bearing == 360 then "wi-wind-default _0-deg"
+      else if bearing > 0 && bearing < 90 then "wi-wind-default _15-deg"
+      else if bearing == 90 then "wi-wind-default _90-deg"
+      else if bearing > 90 && bearing < 180 then "wi-wind-default _120-deg"
+      else if bearing == 180 then "wi-wind-default _180-deg"
+      else if bearing > 180 && bearing < 270 then "wi-wind-default _210-deg"
+      else if bearing == 270 then "wi-wind-default _270-deg"
+      else "wi-wind-default _345-deg"
   in
     "wi " ++ icon
 
@@ -162,7 +160,7 @@ dataPoint iconClass title subtitle =
 
 temperature : Float -> String
 temperature temp =
-  if | temp <= 0 -> "temp-cold"
-     | temp > 0 && temp <= 15 -> "temp-cool"
-     | temp > 15 && temp < 30 -> "temp-warm"
-     | otherwise -> "temp-hot"
+  if temp <= 0 then "temp-cold"
+  else if temp > 0 && temp <= 15 then "temp-cool"
+  else if temp > 15 && temp < 30 then "temp-warm"
+  else "temp-hot"
