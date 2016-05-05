@@ -4,22 +4,18 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import StartApp
+import Effects exposing (Effects)
 import Signal exposing (Address)
 import Task
 import Http
 
-import Forecast.DarkSkySignal exposing (queryForecast, newForecast)
+import Forecast.DarkSkyApi exposing (queryForecast)
+import Forecast.Actions exposing (Action(..))
 import Forecast.Geocoding exposing (queryGeocoding, newGeocoding, GeoLocation)
 import Forecast.Location exposing (Location)
+import Forecast.Locations exposing (rio, london)
 import Forecast.DarkSky as DS
 import Forecast.Widgets as W
-
-
-type Action = NoOp
-            | SelectLocation Int
-            | UpdateForecast (Maybe DS.CompleteForecast)
-            | GeocodeLocation String
-            | ShowGeocodingOptions (List GeoLocation)
 
 
 type alias Model = { locations : List Location
@@ -29,62 +25,57 @@ type alias Model = { locations : List Location
                    , geocodingInput : String
                    }
 
-
-initialModel : Model
-initialModel = { locations = [
-                  { name = "Rio de Janeiro"
-                  , latitude = -22.9068
-                  , longitude = -43.1729
-                  , id = 1
-                  , isSelected = False
-                  }
-                  ,
-                  { name = "London"
-                  , latitude = 51.5072
-                  , longitude = -0.1275
-                  , id = 2
-                  , isSelected = False
-                  }
-                 ]
-               , nextID = 3
-               , currentForecast = Nothing
-               , currentGeocodingOptions = []
-               , geocodingInput = ""
-               }
+init : (Model, Effects Action)
+init =
+  let
+    locations = [{ rio | id = 1, isSelected = True },
+                 { london | id = 2 }]
+    startingLocation = locations |> List.head |> Maybe.withDefault rio
+  in
+    (initialModel locations, queryForecast startingLocation)
 
 
-update : Action -> Model -> Model
+initialModel : List Location -> Model
+initialModel locations = { locations = locations
+                         , nextID = (List.length locations) + 1
+                         , currentForecast = Nothing
+                         , currentGeocodingOptions = []
+                         , geocodingInput = ""
+                         }
+
+
+update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp ->
-      model
+      (model, Effects.none)
 
-    SelectLocation id ->
+    SelectLocation location ->
       let
-        updateSelection loc = { loc | isSelected = loc.id == id }
+        updateSelection loc = { loc | isSelected = loc == location }
       in
-        { model | locations = List.map updateSelection model.locations
+        ({ model | locations = List.map updateSelection model.locations
                 , currentForecast = Nothing
-        }
+         }, queryForecast location)
 
     UpdateForecast cf ->
-      { model | currentForecast = cf }
+      ({ model | currentForecast = cf }, Effects.none)
 
     ShowGeocodingOptions opts ->
-      { model | currentGeocodingOptions = opts }
+      ({ model | currentGeocodingOptions = opts }, Effects.none)
 
     GeocodeLocation loc ->
-      { model | geocodingInput = loc }
+      ({ model | geocodingInput = loc }, Effects.none)
 
 
 -- VIEW --
 
 
-locationItem : Address (Maybe Location) -> Location -> Html
+locationItem : Address Action -> Location -> Html
 locationItem address location =
   div
     [ classList [ ("selected", location.isSelected), ("location", True) ]
-    , onClick address (Just location) ]
+    , onClick address (SelectLocation location) ]
     [ div
         [ class "data temp-warm" ]
         [ div [ class "place" ] [ text location.name ] ]
@@ -121,7 +112,7 @@ completeForecast location cf =
       W.forecast location forecast
 
 
-locationList : Address (Maybe Location) -> Model -> Html
+locationList : Address Action -> Model -> Html
 locationList address model =
   div [ class "locations" ] (List.map (locationItem address) model.locations)
 
@@ -137,7 +128,7 @@ view address model =
     div
     [ class "container" ]
     [
-      locationList queryForecast.address model
+      locationList address model
     , weatherView selectedLocation model.currentForecast
     ]
 
@@ -147,37 +138,18 @@ actions =
   Signal.mailbox Nothing
 
 
-updates =
-  let
-    locationToAction loc =
-      (Maybe.map (\l -> Just (SelectLocation l.id)) loc)
-        |> Maybe.withDefault (Just NoOp)
+app =
+  StartApp.start
+    { init = init
+    , update = update
+    , view = view
+    , inputs = [] }
 
-    geocodingToAction geo =
-      (Maybe.map (\g -> Just (ShowGeocodingOptions g)) geo)
-        |> Maybe.withDefault (Just (ShowGeocodingOptions []))
 
-    nfs = Signal.map (\cf -> Just (UpdateForecast cf)) newForecast.signal
-    qfs = Signal.map locationToAction queryForecast.signal
-    qgcs = Signal.map (\add -> Just (GeocodeLocation add)) queryGeocoding.signal
-    ngcs = Signal.map (\add -> Just (GeocodeLocation add)) queryGeocoding.signal
-  in
-    Signal.mergeMany [actions.signal, qfs, nfs, qgcs, ngcs]
+port tasks : Signal (Task.Task Effects.Never ())
+port tasks =
+  app.tasks
 
 
 main : Signal Html
-main =
-  let
-    address =
-      Signal.forwardTo actions.address Just
-
-    modelShouldChange ma model =
-      Maybe.map (\action -> update action model) ma |> Maybe.withDefault model
-
-    model =
-      Signal.foldp
-        modelShouldChange
-        initialModel
-        updates
-  in
-    Signal.map (view address) model
+main = app.html

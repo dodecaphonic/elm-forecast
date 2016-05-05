@@ -105,17 +105,16 @@ dailyForecastDecoder =
     ("temperatureMax" := Json.float)
 
 
-completeForecastDecoder : Json.Decoder (Maybe CompleteForecast)
+completeForecastDecoder : Json.Decoder CompleteForecast
 completeForecastDecoder =
-  Json.maybe <|
-    Json.object6
-      CompleteForecast
-      ("latitude" := Json.float)
-      ("longitude" := Json.float)
-      ("timezone" := Json.string)
-      ("currently" := forecastDecoder)
-      ("hourly" := (timespanForecastDecoder hourlyForecastDecoder))
-      ("daily" := (timespanForecastDecoder dailyForecastDecoder))
+  Json.object6
+    CompleteForecast
+    ("latitude" := Json.float)
+    ("longitude" := Json.float)
+    ("timezone" := Json.string)
+    ("currently" := forecastDecoder)
+    ("hourly" := (timespanForecastDecoder hourlyForecastDecoder))
+    ("daily" := (timespanForecastDecoder dailyForecastDecoder))
 
 
 apply : Json.Decoder (a -> b) -> Json.Decoder a -> Json.Decoder b
