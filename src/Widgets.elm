@@ -1,4 +1,4 @@
-module Forecast.Widgets(forecast) where
+module Forecast.Widgets exposing (forecast)
 
 
 import Html exposing (div, span, i, text, Html)
@@ -6,9 +6,10 @@ import Html.Attributes exposing (class)
 
 import Forecast.DarkSky as DS
 import Forecast.Location exposing (Location)
+import Forecast.Messages exposing (Msg)
 
 
-forecast : Location -> DS.CompleteForecast -> Html
+forecast : Location -> DS.CompleteForecast -> Html Msg
 forecast location forecast =
   div
     [ ]
@@ -17,7 +18,7 @@ forecast location forecast =
     ]
 
 
-currently : Location -> DS.Forecast -> Html
+currently : Location -> DS.Forecast -> Html Msg
 currently location forecast =
   div
     [ class ("forecast " ++ (temperature forecast.temperature)) ]
@@ -26,11 +27,11 @@ currently location forecast =
     ]
 
 
-hourly : DS.TimespanForecast DS.HourlyForecast -> Html
+hourly : DS.TimespanForecast DS.HourlyForecast -> Html Msg
 hourly ts = div [ ] [ ]
 
 
-summary : Location -> DS.Forecast -> Html
+summary : Location -> DS.Forecast -> Html Msg
 summary location forecast =
   div
     [ class "summary" ]
@@ -40,7 +41,7 @@ summary location forecast =
     ]
 
 
-details : DS.Forecast -> Html
+details : DS.Forecast -> Html Msg
 details forecast =
   div
     [ class "details" ]
@@ -50,7 +51,7 @@ details forecast =
     ]
 
 
-wind : Float -> Float -> Html
+wind : Float -> Float -> Html Msg
 wind speed bearing =
   let
     icon = windBearing bearing
@@ -88,7 +89,7 @@ windBearing bearing =
     "wi " ++ icon
 
 
-precipitation : Float -> Float -> Html
+precipitation : Float -> Float -> Html Msg
 precipitation intensity probability =
   let
     icon = "wi wi-umbrella"
@@ -98,7 +99,7 @@ precipitation intensity probability =
     dataPoint icon title subtitle
 
 
-pressure : Float -> Html
+pressure : Float -> Html Msg
 pressure press =
   let
     icon = "wi wi-down"
@@ -145,7 +146,7 @@ summaryIcon iconName =
       "wi-sunset"
 
 
-dataPoint : String -> String -> String -> Html
+dataPoint : String -> String -> String -> Html Msg
 dataPoint iconClass title subtitle =
   div
     [ class "detail" ]

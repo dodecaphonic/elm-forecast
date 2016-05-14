@@ -1,4 +1,4 @@
-module Forecast.Locations(rio, london) where
+module Forecast.Locations exposing (rio, london)
 
 import Forecast.Location exposing (Location)
 

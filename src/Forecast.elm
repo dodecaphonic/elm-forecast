@@ -1,17 +1,16 @@
-module Forecast where
+module Forecast exposing(..)
 
 import Html exposing (..)
+import Html.App as Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import StartApp
-import Effects exposing (Effects)
-import Signal exposing (Address)
+import Platform.Cmd exposing (Cmd)
 import Task
 import Http
 
 import Forecast.DarkSkyApi exposing (queryForecast)
-import Forecast.Actions exposing (Action(..))
-import Forecast.Geocoding exposing (queryGeocoding, newGeocoding, GeoLocation)
+import Forecast.Messages exposing (Msg(..))
+import Forecast.Geocoding exposing (GeoLocation)
 import Forecast.Location exposing (Location)
 import Forecast.Locations exposing (rio, london)
 import Forecast.DarkSky as DS
@@ -25,7 +24,7 @@ type alias Model = { locations : List Location
                    , geocodingInput : String
                    }
 
-init : (Model, Effects Action)
+init : (Model, Cmd Msg)
 init =
   let
     locations = [{ rio | id = 1, isSelected = True },
@@ -44,11 +43,11 @@ initialModel locations = { locations = locations
                          }
 
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
-  case action of
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
     NoOp ->
-      (model, Effects.none)
+      (model, Cmd.none)
 
     SelectLocation location ->
       let
@@ -58,31 +57,34 @@ update action model =
                 , currentForecast = Nothing
          }, queryForecast location)
 
-    UpdateForecast cf ->
-      ({ model | currentForecast = cf }, Effects.none)
+    UpdateForecastSucceed cf ->
+      ({ model | currentForecast = Just cf }, Cmd.none)
+
+    UpdateForecastFail _ ->
+      (model, Cmd.none)
 
     ShowGeocodingOptions opts ->
-      ({ model | currentGeocodingOptions = opts }, Effects.none)
+      ({ model | currentGeocodingOptions = opts }, Cmd.none)
 
     GeocodeLocation loc ->
-      ({ model | geocodingInput = loc }, Effects.none)
+      ({ model | geocodingInput = loc }, Cmd.none)
 
 
 -- VIEW --
 
 
-locationItem : Address Action -> Location -> Html
-locationItem address location =
+locationItem : Location -> Html Msg
+locationItem location =
   div
     [ classList [ ("selected", location.isSelected), ("location", True) ]
-    , onClick address (SelectLocation location) ]
+    , onClick (SelectLocation location) ]
     [ div
         [ class "data temp-warm" ]
         [ div [ class "place" ] [ text location.name ] ]
     ]
 
 
-weatherView : Maybe Location -> Maybe DS.CompleteForecast -> Html
+weatherView : Maybe Location -> Maybe DS.CompleteForecast -> Html Msg
 weatherView location forecast =
   case location of
     Nothing ->
@@ -92,17 +94,17 @@ weatherView location forecast =
       selectedLocation loc forecast
 
 
-noLocationSelected : Html
+noLocationSelected : Html Msg
 noLocationSelected =
   div [ class "forecast-container" ] [ text "Please select a location." ]
 
 
-selectedLocation : Location -> Maybe DS.CompleteForecast -> Html
+selectedLocation : Location -> Maybe DS.CompleteForecast -> Html Msg
 selectedLocation location forecast =
   div [ class "forecast-container" ] [(completeForecast location forecast)]
 
 
-completeForecast : Location -> Maybe DS.CompleteForecast -> Html
+completeForecast : Location -> Maybe DS.CompleteForecast -> Html Msg
 completeForecast location cf =
   case cf of
     Nothing ->
@@ -112,13 +114,15 @@ completeForecast location cf =
       W.forecast location forecast
 
 
-locationList : Address Action -> Model -> Html
-locationList address model =
-  div [ class "locations" ] (List.map (locationItem address) model.locations)
+locationList : Model -> Html Msg
+locationList model =
+  div
+    [ class "locations" ]
+    (List.map locationItem model.locations)
 
 
-view : Address Action -> Model -> Html
-view address model =
+view : Model -> Html Msg
+view model =
   let
     selectedLocation =
       model.locations
@@ -128,28 +132,14 @@ view address model =
     div
     [ class "container" ]
     [
-      locationList address model
+      locationList model
     , weatherView selectedLocation model.currentForecast
     ]
 
 
-actions : Signal.Mailbox (Maybe Action)
-actions =
-  Signal.mailbox Nothing
-
-
-app =
-  StartApp.start
+main =
+  Html.program
     { init = init
     , update = update
     , view = view
-    , inputs = [] }
-
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks =
-  app.tasks
-
-
-main : Signal Html
-main = app.html
+    , subscriptions = \_ -> Sub.none }

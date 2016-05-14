@@ -1,4 +1,4 @@
-module Forecast.Location(Location) where
+module Forecast.Location exposing (Location)
 
 
 type alias Location = { name : String

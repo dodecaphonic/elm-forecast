@@ -1,4 +1,4 @@
-module Forecast.Geocoding(newGeocoding, queryGeocoding, GeoLocation) where
+module Forecast.Geocoding exposing (GeoLocation)
 
 
 import Http
@@ -13,21 +13,6 @@ type alias GeoLocation = { formattedAddress : String
                          , latitude : Float
                          , longitude : Float
                          }
-
-
-port geocode : Signal (Task Http.Error ())
-port geocode =
-  queryGeocoding.signal
-    |> Signal.map fetchGeocoding
-    |> Signal.map (\task -> task `andThen` Signal.send newGeocoding.address)
-
-
-newGeocoding : Signal.Mailbox (List GeoLocation)
-newGeocoding = Signal.mailbox []
-
-
-queryGeocoding : Signal.Mailbox String
-queryGeocoding = Signal.mailbox ""
 
 
 fetchGeocoding : String -> Task Http.Error (List GeoLocation)
