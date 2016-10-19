@@ -1,4 +1,12 @@
-module Forecast.DarkSky exposing (completeForecastDecoder, CompleteForecast, TimespanForecast, Forecast, DailyForecast, HourlyForecast)
+module Forecast.DarkSky
+    exposing
+        ( completeForecastDecoder
+        , CompleteForecast
+        , TimespanForecast
+        , Forecast
+        , DailyForecast
+        , HourlyForecast
+        )
 
 import Json.Decode as Json exposing ((:=), andThen)
 
