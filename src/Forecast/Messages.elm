@@ -6,9 +6,15 @@ import Forecast.Geocoding exposing (GeoLocation)
 import Forecast.DarkSky as DS
 
 
+type alias KeyCode =
+    Int
+
+
 type Msg
     = NoOp
     | SelectLocation Location
     | UpdateForecast (Result Http.Error DS.CompleteForecast)
-    | GeocodeLocation String
-    | ShowGeocodingOptions (List GeoLocation)
+    | UpdateGeocodingLocation String
+    | MaybeGeocodeLocation KeyCode
+    | ShowGeocodingOptions (Result Http.Error (List GeoLocation))
+    | AddLocation GeoLocation

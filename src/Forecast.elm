@@ -2,13 +2,14 @@ module Forecast exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (keyCode, on, onClick, onInput)
 import Platform.Cmd exposing (Cmd)
 import Task
 import Http
+import Json.Decode as Json
 import Forecast.DarkSkyApi exposing (queryForecast)
 import Forecast.Messages exposing (Msg(..))
-import Forecast.Geocoding exposing (GeoLocation)
+import Forecast.Geocoding exposing (GeoLocation, fetchGeocoding)
 import Forecast.Location exposing (Location)
 import Forecast.Locations exposing (rio, london)
 import Forecast.DarkSky as DS
@@ -17,10 +18,10 @@ import Forecast.Widgets as W
 
 type alias Model =
     { locations : List Location
-    , nextID : Int
     , currentForecast : Maybe DS.CompleteForecast
     , currentGeocodingOptions : List GeoLocation
     , geocodingInput : String
+    , fetchingGeocoding : Bool
     }
 
 
@@ -41,11 +42,33 @@ init =
 initialModel : List Location -> Model
 initialModel locations =
     { locations = locations
-    , nextID = (List.length locations) + 1
     , currentForecast = Nothing
     , currentGeocodingOptions = []
     , geocodingInput = ""
+    , fetchingGeocoding = False
     }
+
+
+addLocation : Model -> GeoLocation -> ( Model, Cmd Msg )
+addLocation model geolocation =
+    let
+        locations =
+            model.locations
+
+        newLocation =
+            { name = geolocation.formattedAddress
+            , latitude = geolocation.latitude
+            , longitude = geolocation.longitude
+            , isSelected = True
+            , id = List.length locations + 1
+            }
+
+        newLocations =
+            (List.map (\l -> { l | isSelected = False }) locations) ++ [ newLocation ]
+    in
+        ( { model | locations = newLocations, currentGeocodingOptions = [] }
+        , queryForecast newLocation
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -72,15 +95,39 @@ update msg model =
         UpdateForecast (Result.Err _) ->
             ( model, Cmd.none )
 
-        ShowGeocodingOptions opts ->
-            ( { model | currentGeocodingOptions = opts }, Cmd.none )
+        ShowGeocodingOptions (Ok opts) ->
+            ( { model
+                | fetchingGeocoding = False
+                , currentGeocodingOptions = opts
+              }
+            , Cmd.none
+            )
 
-        GeocodeLocation loc ->
+        ShowGeocodingOptions (Result.Err _) ->
+            ( { model | fetchingGeocoding = False }, Cmd.none )
+
+        UpdateGeocodingLocation loc ->
             ( { model | geocodingInput = loc }, Cmd.none )
+
+        MaybeGeocodeLocation key ->
+            if key == 13 then
+                ( { model | fetchingGeocoding = True }
+                , Http.send ShowGeocodingOptions (fetchGeocoding model.geocodingInput)
+                )
+            else
+                ( model, Cmd.none )
+
+        AddLocation geolocation ->
+            addLocation model geolocation
 
 
 
 -- VIEW --
+
+
+onKeyUp : (Int -> msg) -> Attribute msg
+onKeyUp tagger =
+    on "keyup" (Json.map tagger keyCode)
 
 
 locationItem : Location -> Html Msg
@@ -124,10 +171,41 @@ completeForecast location cf =
             W.forecast location forecast
 
 
+addLocationInput : Model -> Html Msg
+addLocationInput model =
+    div [ class "add-location" ]
+        [ input
+            [ type_ "text"
+            , value model.geocodingInput
+            , onInput UpdateGeocodingLocation
+            , onKeyUp MaybeGeocodeLocation
+            ]
+            []
+        ]
+
+
+geocodedLocationItem : GeoLocation -> Html Msg
+geocodedLocationItem location =
+    li
+        [ onClick (AddLocation location) ]
+        [ text location.formattedAddress ]
+
+
+geocodedLocationsList : Model -> Html Msg
+geocodedLocationsList model =
+    ul [ class "geocoded-locations" ]
+        (List.map geocodedLocationItem model.currentGeocodingOptions)
+
+
 locationList : Model -> Html Msg
 locationList model =
-    div [ class "locations" ]
-        (List.map locationItem model.locations)
+    div
+        [ class "locations" ]
+        ([ addLocationInput model
+         , geocodedLocationsList model
+         ]
+            ++ (List.map locationItem model.locations)
+        )
 
 
 view : Model -> Html Msg
