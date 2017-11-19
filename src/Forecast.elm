@@ -1,4 +1,4 @@
-module Forecast exposing (..)
+port module Forecast exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -11,7 +11,6 @@ import Forecast.DarkSkyApi exposing (queryForecast)
 import Forecast.Messages exposing (Msg(..))
 import Forecast.Geocoding exposing (GeoLocation, fetchGeocoding)
 import Forecast.Location exposing (Location)
-import Forecast.Locations exposing (rio, london)
 import Forecast.DarkSky as DS
 import Forecast.Widgets as W
 
@@ -25,18 +24,20 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    let
-        locations =
-            [ { rio | id = 1, isSelected = True }
-            , { london | id = 2 }
-            ]
+init : List Location -> ( Model, Cmd Msg )
+init locs =
+    case locs of
+        l :: ls ->
+            let
+                locations =
+                    ({ l | isSelected = True }) :: ls
+            in
+                ( initialModel locations
+                , queryForecast l
+                )
 
-        startingLocation =
-            locations |> List.head |> Maybe.withDefault rio
-    in
-        ( initialModel locations, queryForecast startingLocation )
+        [] ->
+            ( initialModel [], Cmd.none )
 
 
 initialModel : List Location -> Model
@@ -67,7 +68,7 @@ addLocation model geolocation =
             (List.map (\l -> { l | isSelected = False }) locations) ++ [ newLocation ]
     in
         ( { model | locations = newLocations, currentGeocodingOptions = [] }
-        , queryForecast newLocation
+        , Cmd.batch [ queryForecast newLocation, storeLocations newLocations ]
         )
 
 
@@ -222,8 +223,15 @@ view model =
             ]
 
 
+
+-- PORT --
+
+
+port storeLocations : List Location -> Cmd msg
+
+
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , update = update
         , view = view
