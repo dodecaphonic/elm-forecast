@@ -2,7 +2,8 @@ module Forecast.Geocoding exposing (GeoLocation)
 
 import Http
 import Task exposing (Task, andThen)
-import Json.Decode as Json exposing (field)
+import Json.Decode as Json
+import Json.Decode.Pipeline exposing (decode, required)
 
 
 type alias Address =
@@ -14,10 +15,6 @@ type alias GeoLocation =
     , latitude : Float
     , longitude : Float
     }
-
-
-(:=) =
-    field
 
 
 fetchGeocoding : String -> Http.Request (List GeoLocation)
@@ -40,12 +37,12 @@ googleGeocoder address =
 
 geocodingOptionsDecoder : Json.Decoder (List GeoLocation)
 geocodingOptionsDecoder =
-    ("results" := Json.list geolocationDecoder)
+    Json.field "results" (Json.list geolocationDecoder)
 
 
 geolocationDecoder : Json.Decoder GeoLocation
 geolocationDecoder =
-    Json.map3 GeoLocation
-        ("formatted_address" := Json.string)
-        (Json.at [ "geometry", "location", "latitude" ] Json.float)
-        (Json.at [ "geometry", "location", "longitude" ] Json.float)
+    decode GeoLocation
+        |> required "formatted_address" Json.string
+        |> required "geometry" (Json.at [ "geometry", "location", "latitude" ] Json.float)
+        |> required "geometry" (Json.at [ "geometry", "location", "longitude" ] Json.float)
