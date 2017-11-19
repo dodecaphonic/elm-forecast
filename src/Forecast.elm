@@ -1,7 +1,6 @@
 module Forecast exposing (..)
 
 import Html exposing (..)
-import Html.App as Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Platform.Cmd exposing (Cmd)
@@ -67,10 +66,10 @@ update msg model =
                 , queryForecast location
                 )
 
-        UpdateForecastSucceed cf ->
+        UpdateForecast (Ok cf) ->
             ( { model | currentForecast = Just cf }, Cmd.none )
 
-        UpdateForecastFail _ ->
+        UpdateForecast (Result.Err _) ->
             ( model, Cmd.none )
 
         ShowGeocodingOptions opts ->

@@ -8,7 +8,7 @@ module Forecast.DarkSky
         , HourlyForecast
         )
 
-import Json.Decode as Json exposing ((:=), andThen)
+import Json.Decode as Json exposing (andThen, field, map2, succeed)
 
 
 type alias CompleteForecast =
@@ -66,9 +66,18 @@ type alias DailyForecast =
     }
 
 
+(:=) =
+    field
+
+
+(<*>) : Json.Decoder (a -> b) -> Json.Decoder a -> Json.Decoder b
+(<*>) fab da =
+    fab |> andThen (\ab -> andThen (\a -> succeed (ab a)) da)
+
+
 timespanForecastDecoder : Json.Decoder ft -> Json.Decoder (TimespanForecast ft)
 timespanForecastDecoder dataDecoder =
-    Json.object3 TimespanForecast
+    Json.map3 TimespanForecast
         ("summary" := Json.string)
         ("icon" := Json.string)
         ("data" := Json.list dataDecoder)
@@ -76,7 +85,7 @@ timespanForecastDecoder dataDecoder =
 
 hourlyForecastDecoder : Json.Decoder HourlyForecast
 hourlyForecastDecoder =
-    Json.object6 HourlyForecast
+    Json.map6 HourlyForecast
         ("time" := Json.int)
         ("summary" := Json.string)
         ("icon" := Json.string)
@@ -87,24 +96,25 @@ hourlyForecastDecoder =
 
 forecastDecoder : Json.Decoder Forecast
 forecastDecoder =
-    Json.object1 Forecast ("time" := Json.int)
-        `apply` ("summary" := Json.string)
-        `apply` ("icon" := Json.string)
-        `apply` ("precipIntensity" := Json.float)
-        `apply` ("precipProbability" := Json.float)
-        `apply` ("temperature" := Json.float)
-        `apply` ("windSpeed" := Json.float)
-        `apply` ("windBearing" := Json.float)
-        `apply` ("humidity" := Json.float)
-        `apply` ("visibility" := Json.float)
-        `apply` ("cloudCover" := Json.float)
-        `apply` ("pressure" := Json.float)
-        `apply` ("ozone" := Json.float)
+    (succeed Forecast)
+        <*> ("time" := Json.int)
+        <*> ("summary" := Json.string)
+        <*> ("icon" := Json.string)
+        <*> ("precipIntensity" := Json.float)
+        <*> ("precipProbability" := Json.float)
+        <*> ("temperature" := Json.float)
+        <*> ("windSpeed" := Json.float)
+        <*> ("windBearing" := Json.float)
+        <*> ("humidity" := Json.float)
+        <*> ("visibility" := Json.float)
+        <*> ("cloudCover" := Json.float)
+        <*> ("pressure" := Json.float)
+        <*> ("ozone" := Json.float)
 
 
 dailyForecastDecoder : Json.Decoder DailyForecast
 dailyForecastDecoder =
-    Json.object7 DailyForecast
+    Json.map7 DailyForecast
         ("time" := Json.int)
         ("summary" := Json.string)
         ("icon" := Json.string)
@@ -116,15 +126,10 @@ dailyForecastDecoder =
 
 completeForecastDecoder : Json.Decoder CompleteForecast
 completeForecastDecoder =
-    Json.object6 CompleteForecast
+    Json.map6 CompleteForecast
         ("latitude" := Json.float)
         ("longitude" := Json.float)
         ("timezone" := Json.string)
         ("currently" := forecastDecoder)
         ("hourly" := (timespanForecastDecoder hourlyForecastDecoder))
         ("daily" := (timespanForecastDecoder dailyForecastDecoder))
-
-
-apply : Json.Decoder (a -> b) -> Json.Decoder a -> Json.Decoder b
-apply func value =
-    Json.object2 (<|) func value

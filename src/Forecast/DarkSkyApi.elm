@@ -10,8 +10,8 @@ import Forecast.Location exposing (Location)
 
 queryForecast : Location -> Cmd Msg
 queryForecast loc =
-    Task.perform UpdateForecastFail UpdateForecastSucceed
-        <| (Http.get completeForecastDecoder (darkSky loc.latitude loc.longitude))
+    Http.send UpdateForecast <|
+        (Http.get (darkSky loc.latitude loc.longitude) completeForecastDecoder)
 
 
 darkSky : Float -> Float -> String

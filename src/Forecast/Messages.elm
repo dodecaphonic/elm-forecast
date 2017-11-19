@@ -9,7 +9,6 @@ import Forecast.DarkSky as DS
 type Msg
     = NoOp
     | SelectLocation Location
-    | UpdateForecastFail Http.Error
-    | UpdateForecastSucceed DS.CompleteForecast
+    | UpdateForecast (Result Http.Error DS.CompleteForecast)
     | GeocodeLocation String
     | ShowGeocodingOptions (List GeoLocation)
