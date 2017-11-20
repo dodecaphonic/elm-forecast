@@ -25,10 +25,8 @@ end
 
 def fetch_forecast(lat, lon)
   HTTParty.get(format(DARK_SKY_API, lat, lon)).to_json
-  # File.read(File.expand_path("forecast.json", __dir__))
 end
 
 def fetch_geocoding(address)
-  # HTTParty.get(format(GOOGLE_API_TOKEN, URI.encode(address))).to_json
-  File.read(File.expand_path("geocoding.json", __dir__))
+  HTTParty.get(format(GOOGLE_API_TOKEN, URI.encode(address))).to_json
 end
