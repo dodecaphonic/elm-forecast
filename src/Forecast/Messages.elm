@@ -1,9 +1,10 @@
 module Forecast.Messages exposing (Msg(..))
 
-import Http
-import Forecast.Location exposing (Location)
-import Forecast.Geocoding exposing (GeoLocation)
 import Forecast.DarkSky as DS
+import Forecast.Geocoding exposing (GeoLocation)
+import Forecast.Location exposing (Location)
+import Http
+import Spinner
 
 
 type alias KeyCode =
@@ -18,3 +19,5 @@ type Msg
     | MaybeGeocodeLocation KeyCode
     | ShowGeocodingOptions (Result Http.Error (List GeoLocation))
     | AddLocation GeoLocation
+    | GeocodingSpinnerMsg Spinner.Msg
+    | ForecastSpinnerMsg Spinner.Msg

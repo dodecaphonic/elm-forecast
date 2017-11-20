@@ -1,18 +1,18 @@
 port module Forecast exposing (..)
 
+import Forecast.DarkSky as DS
+import Forecast.DarkSkyApi exposing (queryForecast)
+import Forecast.Geocoding exposing (GeoLocation, fetchGeocoding)
+import Forecast.Location exposing (Location)
+import Forecast.Messages exposing (Msg(..))
+import Forecast.Widgets as W
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (keyCode, on, onClick, onInput)
-import Platform.Cmd exposing (Cmd)
-import Task
 import Http
 import Json.Decode as Json
-import Forecast.DarkSkyApi exposing (queryForecast)
-import Forecast.Messages exposing (Msg(..))
-import Forecast.Geocoding exposing (GeoLocation, fetchGeocoding)
-import Forecast.Location exposing (Location)
-import Forecast.DarkSky as DS
-import Forecast.Widgets as W
+import Platform.Cmd exposing (Cmd)
+import Spinner
 
 
 type alias Model =
@@ -21,6 +21,9 @@ type alias Model =
     , currentGeocodingOptions : List GeoLocation
     , geocodingInput : String
     , fetchingGeocoding : Bool
+    , fetchingCurrentForecast : Bool
+    , geocodingSpinner : Spinner.Model
+    , forecastSpinner : Spinner.Model
     }
 
 
@@ -32,21 +35,24 @@ init locs =
                 locations =
                     ({ l | isSelected = True }) :: ls
             in
-                ( initialModel locations
+                ( initialModel locations True
                 , queryForecast l
                 )
 
         [] ->
-            ( initialModel [], Cmd.none )
+            ( initialModel [] False, Cmd.none )
 
 
-initialModel : List Location -> Model
-initialModel locations =
+initialModel : List Location -> Bool -> Model
+initialModel locations fetchingForecast =
     { locations = locations
     , currentForecast = Nothing
     , currentGeocodingOptions = []
     , geocodingInput = ""
     , fetchingGeocoding = False
+    , fetchingCurrentForecast = fetchingForecast
+    , geocodingSpinner = Spinner.init
+    , forecastSpinner = Spinner.init
     }
 
 
@@ -86,15 +92,26 @@ update msg model =
                 ( { model
                     | locations = List.map updateSelection model.locations
                     , currentForecast = Nothing
+                    , fetchingCurrentForecast = True
                   }
                 , queryForecast location
                 )
 
         UpdateForecast (Ok cf) ->
-            ( { model | currentForecast = Just cf }, Cmd.none )
+            ( { model
+                | currentForecast = Just cf
+                , fetchingCurrentForecast = False
+              }
+            , Cmd.none
+            )
 
         UpdateForecast (Result.Err _) ->
-            ( model, Cmd.none )
+            ( { model
+                | currentForecast = Nothing
+                , fetchingCurrentForecast = False
+              }
+            , Cmd.none
+            )
 
         ShowGeocodingOptions (Ok opts) ->
             ( { model
@@ -121,6 +138,20 @@ update msg model =
         AddLocation geolocation ->
             addLocation model geolocation
 
+        GeocodingSpinnerMsg msg ->
+            let
+                spinnerModel =
+                    Spinner.update msg model.geocodingSpinner
+            in
+                { model | geocodingSpinner = spinnerModel } ! []
+
+        ForecastSpinnerMsg msg ->
+            let
+                spinnerModel =
+                    Spinner.update msg model.forecastSpinner
+            in
+                { model | forecastSpinner = spinnerModel } ! []
+
 
 
 -- VIEW --
@@ -142,31 +173,42 @@ locationItem location =
         ]
 
 
-weatherView : Maybe Location -> Maybe DS.CompleteForecast -> Html Msg
-weatherView location forecast =
-    case location of
-        Nothing ->
-            noLocationSelected
-
-        Just loc ->
-            selectedLocation loc forecast
+weatherView : Model -> Html Msg
+weatherView model =
+    let
+        currentLocation =
+            model.locations
+                |> List.filter .isSelected
+                |> List.head
+    in
+        Maybe.map (selectedLocation model) currentLocation
+            |> Maybe.withDefault noLocationSelected
 
 
 noLocationSelected : Html Msg
 noLocationSelected =
-    div [ class "forecast-container" ] [ text "Please select a location." ]
+    div
+        [ class "forecast-container" ]
+        [ text "Please select a location." ]
 
 
-selectedLocation : Location -> Maybe DS.CompleteForecast -> Html Msg
-selectedLocation location forecast =
-    div [ class "forecast-container" ] [ (completeForecast location forecast) ]
+selectedLocation : Model -> Location -> Html Msg
+selectedLocation model location =
+    div
+        [ class "forecast-container" ]
+        [ completeForecast model location ]
 
 
-completeForecast : Location -> Maybe DS.CompleteForecast -> Html Msg
-completeForecast location cf =
-    case cf of
+completeForecast : Model -> Location -> Html Msg
+completeForecast model location =
+    case model.currentForecast of
         Nothing ->
-            div [] [ text "Weather goes here." ]
+            div []
+                [ if model.fetchingCurrentForecast then
+                    Spinner.view Spinner.defaultConfig model.forecastSpinner
+                  else
+                    text "Weather goes here."
+                ]
 
         Just forecast ->
             W.forecast location forecast
@@ -198,11 +240,20 @@ geocodedLocationsList model =
         (List.map geocodedLocationItem model.currentGeocodingOptions)
 
 
+geocodingSpinner : Model -> Html Msg
+geocodingSpinner model =
+    if model.fetchingGeocoding then
+        Spinner.view Spinner.defaultConfig model.geocodingSpinner
+    else
+        text ""
+
+
 locationList : Model -> Html Msg
 locationList model =
     div
         [ class "locations" ]
         ([ addLocationInput model
+         , geocodingSpinner model
          , geocodedLocationsList model
          ]
             ++ (List.map locationItem model.locations)
@@ -211,16 +262,10 @@ locationList model =
 
 view : Model -> Html Msg
 view model =
-    let
-        selectedLocation =
-            model.locations
-                |> List.filter .isSelected
-                |> List.head
-    in
-        div [ class "container" ]
-            [ locationList model
-            , weatherView selectedLocation model.currentForecast
-            ]
+    div [ class "container" ]
+        [ locationList model
+        , weatherView model
+        ]
 
 
 
@@ -230,10 +275,22 @@ view model =
 port storeLocations : List Location -> Cmd msg
 
 
+
+-- SUBSCRIPTIONS --
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Sub.map GeocodingSpinnerMsg Spinner.subscription
+        , Sub.map ForecastSpinnerMsg Spinner.subscription
+        ]
+
+
 main =
     Html.programWithFlags
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
