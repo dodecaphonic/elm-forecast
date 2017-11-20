@@ -33,7 +33,8 @@ init locs =
         l :: ls ->
             let
                 locations =
-                    ({ l | isSelected = True }) :: ls
+                    ({ l | isSelected = True })
+                        :: List.map (\ol -> { ol | isSelected = False }) ls
             in
                 ( initialModel locations True
                 , queryForecast l
