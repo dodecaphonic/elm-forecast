@@ -12,6 +12,11 @@
 
   <script type="text/javascript" src="js/forecast.js"></script>
   <script type="text/javascript">
-    var app = Elm.fullscreen(Elm.Forecast);
+   var app = Elm.Forecast.fullscreen(JSON.parse(localStorage["forecastLocations"] || "[]"));
+
+   app.ports.storeLocations.subscribe(function (locations) {
+     localStorage["forecastLocations"] = JSON.stringify(locations);
+   });
+
   </script>
 </html>
