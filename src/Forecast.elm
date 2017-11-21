@@ -19,7 +19,6 @@ import Spinner
 
 type alias Model =
     { locations : List Location
-    , currentForecast : Maybe DS.CompleteForecast
     , currentGeocodingOptions : List GeoLocation
     , geocodingInput : String
     , fetchingGeocoding : Bool
@@ -49,7 +48,6 @@ init locs =
 initialModel : List Location -> Bool -> Model
 initialModel locations fetchingForecast =
     { locations = locations
-    , currentForecast = Nothing
     , currentGeocodingOptions = []
     , geocodingInput = ""
     , fetchingGeocoding = False
@@ -70,6 +68,7 @@ addLocation model geolocation =
             , latitude = geolocation.latitude
             , longitude = geolocation.longitude
             , isSelected = True
+            , currentForecast = Nothing
             , id = List.length locations + 1
             }
 
@@ -80,6 +79,58 @@ addLocation model geolocation =
         ( { model | locations = newLocations, currentGeocodingOptions = [] }
         , Cmd.batch [ queryForecast newLocation, storeLocations newLocations ]
         )
+
+
+splitAt : (a -> Bool) -> List a -> ( List a, List a )
+splitAt f xs =
+    let
+        updateRight =
+            \( ls, rs ) x -> ( ls, rs ++ [ x ] )
+
+        updateLeft =
+            \( ls, rs ) x -> ( ls ++ [ x ], rs )
+
+        split =
+            List.foldl
+                (\x ( upfn, ( ls, rs ) ) ->
+                    if f x then
+                        ( updateRight, ( ls, rs ) )
+                    else
+                        ( upfn, upfn ( ls, rs ) x )
+                )
+                ( updateLeft, ( [], [] ) )
+                xs
+    in
+        Tuple.second split
+
+
+updateSelectedLocationForecast : Model -> DS.CompleteForecast -> Model
+updateSelectedLocationForecast model cf =
+    let
+        selectedLocation =
+            model.locations
+                |> List.filter .isSelected
+                |> List.head
+
+        updateForecast loc =
+            let
+                ( ls, rs ) =
+                    splitAt (\l -> l == loc) model.locations
+
+                withForecast =
+                    { loc | currentForecast = Just cf }
+            in
+                ls ++ [ withForecast ] ++ rs
+
+        locations =
+            selectedLocation
+                |> Maybe.map updateForecast
+                |> Maybe.withDefault model.locations
+    in
+        { model
+            | locations = locations
+            , fetchingCurrentForecast = False
+        }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,25 +146,18 @@ update msg model =
             in
                 ( { model
                     | locations = List.map updateSelection model.locations
-                    , currentForecast = Nothing
                     , fetchingCurrentForecast = True
                   }
                 , queryForecast location
                 )
 
         UpdateForecast (Ok cf) ->
-            ( { model
-                | currentForecast = Just cf
-                , fetchingCurrentForecast = False
-              }
+            ( updateSelectedLocationForecast model cf
             , Cmd.none
             )
 
         UpdateForecast (Result.Err _) ->
-            ( { model
-                | currentForecast = Nothing
-                , fetchingCurrentForecast = False
-              }
+            ( { model | fetchingCurrentForecast = False }
             , Cmd.none
             )
 
@@ -241,7 +285,7 @@ selectedLocation model location =
 
 completeForecast : Model -> Location -> Html Msg
 completeForecast model location =
-    case model.currentForecast of
+    case location.currentForecast of
         Nothing ->
             div []
                 [ if model.fetchingCurrentForecast then
