@@ -76,13 +76,17 @@ addLocation model geolocation =
             (List.map (\l -> { l | isSelected = False }) locations)
                 ++ [ newLocation ]
     in
-        ( { model | locations = newLocations, currentGeocodingOptions = [] }
+        ( { model
+            | locations = newLocations
+            , geocodingInput = ""
+            , currentGeocodingOptions = []
+          }
         , Cmd.batch [ queryForecast newLocation, storeLocations newLocations ]
         )
 
 
-splitAt : (a -> Bool) -> List a -> ( List a, List a )
-splitAt f xs =
+splitBy : (a -> Bool) -> List a -> ( List a, List a )
+splitBy f xs =
     let
         updateRight =
             \( ls, rs ) x -> ( ls, rs ++ [ x ] )
@@ -115,7 +119,7 @@ updateSelectedLocationForecast model cf =
         updateForecast loc =
             let
                 ( ls, rs ) =
-                    splitAt (\l -> l == loc) model.locations
+                    splitBy (\l -> l == loc) model.locations
 
                 withForecast =
                     { loc | currentForecast = Just cf }
