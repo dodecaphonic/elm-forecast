@@ -1,14 +1,16 @@
 port module Forecast exposing (..)
 
+import Css exposing (..)
 import Forecast.DarkSky as DS
 import Forecast.DarkSkyApi exposing (queryForecast)
 import Forecast.Geocoding exposing (GeoLocation, fetchGeocoding)
 import Forecast.Location exposing (Location)
 import Forecast.Messages exposing (Msg(..))
 import Forecast.Widgets as W
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (keyCode, on, onClick, onInput)
+import Html
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (css, value, type_)
+import Html.Styled.Events exposing (keyCode, on, onClick, onInput)
 import Http
 import Json.Decode as Json
 import Platform.Cmd exposing (Cmd)
@@ -72,7 +74,8 @@ addLocation model geolocation =
             }
 
         newLocations =
-            (List.map (\l -> { l | isSelected = False }) locations) ++ [ newLocation ]
+            (List.map (\l -> { l | isSelected = False }) locations)
+                ++ [ newLocation ]
     in
         ( { model | locations = newLocations, currentGeocodingOptions = [] }
         , Cmd.batch [ queryForecast newLocation, storeLocations newLocations ]
@@ -166,11 +169,39 @@ onKeyUp tagger =
 locationItem : Location -> Html Msg
 locationItem location =
     div
-        [ classList [ ( "selected", location.isSelected ), ( "location", True ) ]
-        , onClick (SelectLocation location)
+        [ onClick (SelectLocation location)
+        , css
+            [ height (px 170)
+            , backgroundColor (rgb 224 242 255)
+            , borderRadius2 (px 5) (px 5)
+            , cursor pointer
+            , color (rgb 0 0 0)
+            ]
         ]
-        [ div [ class "data temp-warm" ]
-            [ div [ class "place" ] [ text location.name ] ]
+        [ div
+            [ css
+                [ height (px 140)
+                , margin2 (px 10) (px 10)
+                ]
+            ]
+            [ div
+                [ css
+                    [ fontSize (Css.em 1.2) ]
+                ]
+                [ text location.name ]
+            ]
+        , div
+            [ css
+                [ height (px 20)
+                , backgroundColor
+                    (if location.isSelected then
+                        (rgb 116 12 232)
+                     else
+                        (rgb 224 242 255)
+                    )
+                ]
+            ]
+            []
         ]
 
 
@@ -186,17 +217,25 @@ weatherView model =
             |> Maybe.withDefault noLocationSelected
 
 
+forecastContainerStyle : Attribute msg
+forecastContainerStyle =
+    css
+        [ width (px 350)
+        , marginLeft (px 20)
+        ]
+
+
 noLocationSelected : Html Msg
 noLocationSelected =
     div
-        [ class "forecast-container" ]
+        [ forecastContainerStyle ]
         [ text "Please select a location." ]
 
 
 selectedLocation : Model -> Location -> Html Msg
 selectedLocation model location =
     div
-        [ class "forecast-container" ]
+        [ forecastContainerStyle ]
         [ completeForecast model location ]
 
 
@@ -206,7 +245,8 @@ completeForecast model location =
         Nothing ->
             div []
                 [ if model.fetchingCurrentForecast then
-                    Spinner.view Spinner.defaultConfig model.forecastSpinner
+                    fromUnstyled <|
+                        Spinner.view Spinner.defaultConfig model.forecastSpinner
                   else
                     text "Weather goes here."
                 ]
@@ -217,7 +257,7 @@ completeForecast model location =
 
 addLocationInput : Model -> Html Msg
 addLocationInput model =
-    div [ class "add-location" ]
+    div []
         [ input
             [ type_ "text"
             , value model.geocodingInput
@@ -237,14 +277,14 @@ geocodedLocationItem location =
 
 geocodedLocationsList : Model -> Html Msg
 geocodedLocationsList model =
-    ul [ class "geocoded-locations" ]
+    ul []
         (List.map geocodedLocationItem model.currentGeocodingOptions)
 
 
 geocodingSpinner : Model -> Html Msg
 geocodingSpinner model =
     if model.fetchingGeocoding then
-        Spinner.view Spinner.defaultConfig model.geocodingSpinner
+        fromUnstyled <| Spinner.view Spinner.defaultConfig model.geocodingSpinner
     else
         text ""
 
@@ -252,7 +292,7 @@ geocodingSpinner model =
 locationList : Model -> Html Msg
 locationList model =
     div
-        [ class "locations" ]
+        [ css [ width (px 300) ] ]
         ([ addLocationInput model
          , geocodingSpinner model
          , geocodedLocationsList model
@@ -263,7 +303,12 @@ locationList model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "container" ]
+    div
+        [ css
+            [ displayFlex
+            , flexDirection row
+            ]
+        ]
         [ locationList model
         , weatherView model
         ]
@@ -292,6 +337,6 @@ main =
     Html.programWithFlags
         { init = init
         , update = update
-        , view = view
+        , view = view >> toUnstyled
         , subscriptions = subscriptions
         }

@@ -1,7 +1,9 @@
 module Forecast.Widgets exposing (forecast)
 
-import Html exposing (div, span, i, text, Html)
-import Html.Attributes exposing (class)
+import Css exposing (..)
+import Html
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (class, css)
 import Forecast.DarkSky as DS
 import Forecast.Location exposing (Location)
 import Forecast.Messages exposing (Msg)
@@ -9,15 +11,31 @@ import Forecast.Messages exposing (Msg)
 
 forecast : Location -> DS.CompleteForecast -> Html Msg
 forecast location forecast =
-    div []
+    div
+        []
         [ currently location forecast.currently
         , hourly forecast.hourly
         ]
 
 
+forecastDivStyle : List Style
+forecastDivStyle =
+    [ displayFlex
+    , flexDirection column
+    , alignItems center
+    , justifyContent center
+    , borderRadius2 (px 5) (px 5)
+    ]
+
+
 currently : Location -> DS.Forecast -> Html Msg
 currently location forecast =
-    div [ class ("forecast " ++ (temperature forecast.temperature)) ]
+    div
+        [ css
+            ((temperature forecast.temperature)
+                ++ forecastDivStyle
+            )
+        ]
         [ summary location forecast
         , details forecast
         ]
@@ -30,16 +48,47 @@ hourly ts =
 
 summary : Location -> DS.Forecast -> Html Msg
 summary location forecast =
-    div [ class "summary" ]
-        [ i [ class ("conditions wi " ++ (summaryIcon forecast.icon)) ] []
-        , span [ class "location" ] [ text location.name ]
-        , span [ class "temperature" ] [ text ((toString <| truncate forecast.temperature) ++ "º") ]
+    div
+        [ css
+            [ width (pct 100)
+            , displayFlex
+            , alignItems center
+            ]
+        ]
+        [ i
+            [ class ("wi " ++ (summaryIcon forecast.icon))
+            , css
+                [ fontSize (Css.em 2.4)
+                , marginLeft (px 15)
+                , marginTop (px 20)
+                ]
+            ]
+            []
+        , span
+            [ css
+                [ flex (int 2) ]
+            ]
+            [ text location.name ]
+        , span
+            [ css
+                [ textAlign right
+                , fontSize (Css.em 2.4)
+                ]
+            ]
+            [ text ((toString <| truncate forecast.temperature) ++ "º")
+            ]
         ]
 
 
 details : DS.Forecast -> Html Msg
 details forecast =
-    div [ class "details" ]
+    div
+        [ css
+            [ displayFlex
+            , margin2 (px 30) (px 30)
+            , width (pct 100)
+            ]
+        ]
         [ wind forecast.windSpeed forecast.windBearing
         , precipitation forecast.precipIntensity forecast.precipProbability
         , pressure forecast.pressure
@@ -174,23 +223,47 @@ summaryIcon iconName =
 
 dataPoint : String -> String -> String -> Html Msg
 dataPoint iconClass title subtitle =
-    div [ class "detail" ]
-        [ div [ class "icon" ]
+    div
+        [ css
+            [ displayFlex
+            , flex2 (int 1) (int 1)
+            , fontSize (Css.em 0.9)
+            ]
+        ]
+        [ div
+            [ css
+                [ fontSize (Css.em 1.5) ]
+            ]
             [ i [ class iconClass ] [] ]
-        , div [ class "text" ]
-            [ span [ class "title" ] [ text title ]
-            , span [ class "subtitle" ] [ text subtitle ]
+        , div
+            [ css
+                [ marginLeft (px 10) ]
+            ]
+            [ span
+                [ css
+                    [ display block ]
+                ]
+                [ text title ]
+            , span
+                [ css
+                    [ fontWeight (int 300) ]
+                ]
+                [ text subtitle ]
             ]
         ]
 
 
-temperature : Float -> String
+temperature : Float -> List Style
 temperature temp =
     if temp <= 0 then
-        "temp-cold"
+        [ backgroundColor (hex "#FAFAFA")
+        , color (hex "#000000")
+        ]
     else if temp > 0 && temp <= 15 then
-        "temp-cool"
+        [ backgroundColor (hex "#AFDCD8")
+        , color (hex "#000000")
+        ]
     else if temp > 15 && temp < 30 then
-        "temp-warm"
+        [ backgroundColor (hex "#ECC055") ]
     else
-        "temp-hot"
+        [ backgroundColor (hex "#E9B96F") ]
