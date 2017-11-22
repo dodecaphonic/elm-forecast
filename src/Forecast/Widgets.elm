@@ -276,12 +276,11 @@ weatherIcon : List Style -> String -> Html msg
 weatherIcon styles icon =
     i
         [ class ("wi " ++ (summaryIcon icon))
-        , css
-            ([ fontSize (Css.em 2.4)
-             , marginLeft (px 15)
-             ]
+        , css <|
+            [ fontSize (Css.em 2.4)
+            , marginLeft (px 15)
+            ]
                 ++ styles
-            )
         ]
         []
 
