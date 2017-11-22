@@ -99,10 +99,12 @@ updateLocationForecast model loc cf =
                 []
                 model.locations
     in
-        { model
+        ( { model
             | locations = locations
             , fetchingCurrentForecast = False
-        }
+          }
+        , storeLocations locations
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -124,9 +126,7 @@ update msg model =
                 )
 
         UpdateForecast loc (Ok cf) ->
-            ( updateLocationForecast model loc cf
-            , Cmd.none
-            )
+            updateLocationForecast model loc cf
 
         UpdateForecast _ (Result.Err _) ->
             ( { model | fetchingCurrentForecast = False }
