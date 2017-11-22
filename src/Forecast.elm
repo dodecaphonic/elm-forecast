@@ -64,7 +64,7 @@ addLocation model geolocation =
             model.locations
 
         newLocation =
-            { name = geolocation.formattedAddress
+            { name = geolocation.placeName
             , latitude = geolocation.latitude
             , longitude = geolocation.longitude
             , isSelected = True

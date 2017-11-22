@@ -12,6 +12,7 @@ type alias Address =
 
 type alias GeoLocation =
     { formattedAddress : String
+    , placeName : String
     , latitude : Float
     , longitude : Float
     }
@@ -36,5 +37,7 @@ geolocationDecoder : Json.Decoder GeoLocation
 geolocationDecoder =
     decode GeoLocation
         |> required "formatted_address" Json.string
+        |> required "address_components"
+            (Json.index 0 <| Json.at [ "long_name" ] Json.string)
         |> required "geometry" (Json.at [ "location", "lat" ] Json.float)
         |> required "geometry" (Json.at [ "location", "lng" ] Json.float)
