@@ -1,12 +1,13 @@
-module Forecast.Widgets exposing (forecast)
+module Forecast.Widgets exposing (forecast, locationListItem)
 
 import Css exposing (..)
 import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (class, css)
+import Html.Styled.Events exposing (onClick)
 import Forecast.DarkSky as DS
 import Forecast.Location exposing (Location)
-import Forecast.Messages exposing (Msg)
+import Forecast.Messages exposing (Msg(SelectLocation))
 
 
 forecast : Location -> DS.CompleteForecast -> Html Msg
@@ -32,7 +33,7 @@ currently : Location -> DS.Forecast -> Html Msg
 currently location forecast =
     div
         [ css
-            ((temperature forecast.temperature)
+            ((temperatureStyles forecast.temperature)
                 ++ forecastDivStyle
             )
         ]
@@ -53,29 +54,26 @@ summary location forecast =
             [ width (pct 100)
             , displayFlex
             , alignItems center
+            , marginTop (px 10)
             ]
         ]
-        [ i
-            [ class ("wi " ++ (summaryIcon forecast.icon))
-            , css
-                [ fontSize (Css.em 2.4)
-                , marginLeft (px 15)
-                , marginTop (px 20)
-                ]
-            ]
-            []
+        [ weatherIcon [] forecast.icon
         , span
             [ css
-                [ flex (int 2) ]
+                [ flex (int 2)
+                , marginLeft (px 15)
+                ]
             ]
             [ text location.name ]
         , span
             [ css
                 [ textAlign right
                 , fontSize (Css.em 2.4)
+                , fontWeight (int 500)
+                , marginRight (px 15)
                 ]
             ]
-            [ text ((toString <| truncate forecast.temperature) ++ "º")
+            [ text (formatTemperature forecast.temperature)
             ]
         ]
 
@@ -253,8 +251,8 @@ dataPoint iconClass title subtitle =
         ]
 
 
-temperature : Float -> List Style
-temperature temp =
+temperatureStyles : Float -> List Style
+temperatureStyles temp =
     if temp <= 0 then
         [ backgroundColor (hex "#FAFAFA")
         , color (hex "#000000")
@@ -267,3 +265,98 @@ temperature temp =
         [ backgroundColor (hex "#ECC055") ]
     else
         [ backgroundColor (hex "#E9B96F") ]
+
+
+formatTemperature : Float -> String
+formatTemperature temp =
+    (toString <| truncate temp) ++ "º"
+
+
+weatherIcon : List Style -> String -> Html msg
+weatherIcon styles icon =
+    i
+        [ class ("wi " ++ (summaryIcon icon))
+        , css
+            ([ fontSize (Css.em 2.4)
+             , marginLeft (px 15)
+             ]
+                ++ styles
+            )
+        ]
+        []
+
+
+locationListItem : Location -> Html Msg
+locationListItem location =
+    let
+        defaultColors =
+            [ backgroundColor (rgb 224 242 255)
+            , color (rgb 0 0 0)
+            ]
+
+        currentTemperature =
+            .temperature << .currently
+
+        colors =
+            location.currentForecast
+                |> Maybe.map (temperatureStyles << currentTemperature)
+                |> Maybe.withDefault defaultColors
+
+        temperatureValue =
+            location.currentForecast
+                |> Maybe.map (formatTemperature << currentTemperature)
+                |> Maybe.withDefault "--"
+
+        temperatureIcon =
+            location.currentForecast
+                |> Maybe.map (weatherIcon [ flex (int 1) ] << .icon << .currently)
+                |> Maybe.withDefault (weatherIcon [ flex (int 1) ] "fog")
+    in
+        div
+            [ onClick (SelectLocation location)
+            , css <|
+                [ height (px 120)
+                , borderRadius2 (px 5) (px 5)
+                , cursor pointer
+                , marginBottom (px 20)
+                ]
+                    ++ colors
+            ]
+            [ div
+                [ css
+                    [ height (px 20)
+                    , backgroundColor
+                        (if location.isSelected then
+                            (rgb 116 12 232)
+                         else
+                            (rgb 224 242 255)
+                        )
+                    ]
+                ]
+                []
+            , div
+                [ css
+                    [ margin2 (px 10) (px 10)
+                    , displayFlex
+                    , alignItems center
+                    , fontSize (Css.em 1.2)
+                    ]
+                ]
+                [ temperatureIcon
+                , div
+                    [ css
+                        [ alignSelf flexEnd
+                        , fontSize (Css.em 1.4)
+                        , fontWeight (int 500)
+                        ]
+                    ]
+                    [ text temperatureValue ]
+                ]
+            , div
+                [ css
+                    [ displayFlex
+                    , margin2 (px 10) (px 10)
+                    ]
+                ]
+                [ text location.name ]
+            ]

@@ -85,7 +85,7 @@ addLocation model geolocation =
         )
 
 
-updateLocationForecast : Model -> Location -> DS.CompleteForecast -> Model
+updateLocationForecast : Model -> Location -> DS.CompleteForecast -> ( Model, Cmd Msg )
 updateLocationForecast model loc cf =
     let
         locations =
@@ -182,45 +182,6 @@ onKeyUp tagger =
     on "keyup" (Json.map tagger keyCode)
 
 
-locationItem : Location -> Html Msg
-locationItem location =
-    div
-        [ onClick (SelectLocation location)
-        , css
-            [ height (px 170)
-            , backgroundColor (rgb 224 242 255)
-            , borderRadius2 (px 5) (px 5)
-            , cursor pointer
-            , color (rgb 0 0 0)
-            ]
-        ]
-        [ div
-            [ css
-                [ height (px 140)
-                , margin2 (px 10) (px 10)
-                ]
-            ]
-            [ div
-                [ css
-                    [ fontSize (Css.em 1.2) ]
-                ]
-                [ text location.name ]
-            ]
-        , div
-            [ css
-                [ height (px 20)
-                , backgroundColor
-                    (if location.isSelected then
-                        (rgb 116 12 232)
-                     else
-                        (rgb 224 242 255)
-                    )
-                ]
-            ]
-            []
-        ]
-
-
 weatherView : Model -> Html Msg
 weatherView model =
     let
@@ -287,7 +248,10 @@ addLocationInput model =
 geocodedLocationItem : GeoLocation -> Html Msg
 geocodedLocationItem location =
     li
-        [ onClick (AddLocation location) ]
+        [ onClick (AddLocation location)
+        , css
+            [ cursor pointer ]
+        ]
         [ text location.formattedAddress ]
 
 
@@ -313,7 +277,7 @@ locationList model =
          , geocodingSpinner model
          , geocodedLocationsList model
          ]
-            ++ (List.map locationItem model.locations)
+            ++ (List.map W.locationListItem model.locations)
         )
 
 
