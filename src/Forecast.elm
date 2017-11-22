@@ -85,29 +85,6 @@ addLocation model geolocation =
         )
 
 
-splitBy : (a -> Bool) -> List a -> ( List a, List a )
-splitBy f xs =
-    let
-        updateRight =
-            \( ls, rs ) x -> ( ls, rs ++ [ x ] )
-
-        updateLeft =
-            \( ls, rs ) x -> ( ls ++ [ x ], rs )
-
-        split =
-            List.foldl
-                (\x ( upfn, ( ls, rs ) ) ->
-                    if f x then
-                        ( updateRight, ( ls, rs ) )
-                    else
-                        ( upfn, upfn ( ls, rs ) x )
-                )
-                ( updateLeft, ( [], [] ) )
-                xs
-    in
-        Tuple.second split
-
-
 updateLocationForecast : Model -> Location -> DS.CompleteForecast -> Model
 updateLocationForecast model loc cf =
     let
