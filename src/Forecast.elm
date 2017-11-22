@@ -15,6 +15,7 @@ import Http
 import Json.Decode as Json
 import Platform.Cmd exposing (Cmd)
 import Spinner
+import Time exposing (every, minute)
 
 
 type alias Model =
@@ -172,6 +173,9 @@ update msg model =
             in
                 { model | forecastSpinner = spinnerModel } ! []
 
+        RefreshAllForecasts ->
+            ( model, Cmd.batch <| List.map queryForecast model.locations )
+
 
 
 -- VIEW --
@@ -310,6 +314,7 @@ subscriptions model =
     Sub.batch
         [ Sub.map GeocodingSpinnerMsg Spinner.subscription
         , Sub.map ForecastSpinnerMsg Spinner.subscription
+        , every (5 * minute) (\_ -> RefreshAllForecasts)
         ]
 
 

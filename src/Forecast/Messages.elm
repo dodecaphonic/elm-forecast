@@ -21,3 +21,4 @@ type Msg
     | AddLocation GeoLocation
     | GeocodingSpinnerMsg Spinner.Msg
     | ForecastSpinnerMsg Spinner.Msg
+    | RefreshAllForecasts
