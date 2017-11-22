@@ -38,7 +38,7 @@ init locs =
                         :: List.map (\ol -> { ol | isSelected = False }) ls
             in
                 ( initialModel locations True
-                , queryForecast l
+                , Cmd.batch <| List.map queryForecast locations
                 )
 
         [] ->
@@ -108,28 +108,19 @@ splitBy f xs =
         Tuple.second split
 
 
-updateSelectedLocationForecast : Model -> DS.CompleteForecast -> Model
-updateSelectedLocationForecast model cf =
+updateLocationForecast : Model -> Location -> DS.CompleteForecast -> Model
+updateLocationForecast model loc cf =
     let
-        selectedLocation =
-            model.locations
-                |> List.filter .isSelected
-                |> List.head
-
-        updateForecast loc =
-            let
-                ( ls, rs ) =
-                    splitBy (\l -> l == loc) model.locations
-
-                withForecast =
-                    { loc | currentForecast = Just cf }
-            in
-                ls ++ [ withForecast ] ++ rs
-
         locations =
-            selectedLocation
-                |> Maybe.map updateForecast
-                |> Maybe.withDefault model.locations
+            List.foldr
+                (\l ls ->
+                    if l.id == loc.id then
+                        ({ l | currentForecast = Just cf }) :: ls
+                    else
+                        l :: ls
+                )
+                []
+                model.locations
     in
         { model
             | locations = locations
@@ -152,15 +143,15 @@ update msg model =
                     | locations = List.map updateSelection model.locations
                     , fetchingCurrentForecast = True
                   }
-                , queryForecast location
+                , Cmd.none
                 )
 
-        UpdateForecast (Ok cf) ->
-            ( updateSelectedLocationForecast model cf
+        UpdateForecast loc (Ok cf) ->
+            ( updateLocationForecast model loc cf
             , Cmd.none
             )
 
-        UpdateForecast (Result.Err _) ->
+        UpdateForecast _ (Result.Err _) ->
             ( { model | fetchingCurrentForecast = False }
             , Cmd.none
             )

@@ -14,7 +14,7 @@ type alias KeyCode =
 type Msg
     = NoOp
     | SelectLocation Location
-    | UpdateForecast (Result Http.Error DS.CompleteForecast)
+    | UpdateForecast Location (Result Http.Error DS.CompleteForecast)
     | UpdateGeocodingLocation String
     | MaybeGeocodeLocation KeyCode
     | ShowGeocodingOptions (Result Http.Error (List GeoLocation))

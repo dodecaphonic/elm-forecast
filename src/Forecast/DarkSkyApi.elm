@@ -10,7 +10,7 @@ import Forecast.Location exposing (Location)
 
 queryForecast : Location -> Cmd Msg
 queryForecast loc =
-    Http.send UpdateForecast <|
+    Http.send (UpdateForecast loc) <|
         (Http.get (darkSky loc.latitude loc.longitude) completeForecastDecoder)
 
 
