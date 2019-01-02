@@ -1,5 +1,6 @@
 port module Forecast exposing (..)
 
+import Browser
 import Css exposing (..)
 import Forecast.DarkSky as DS
 import Forecast.DarkSkyApi exposing (queryForecast)
@@ -15,7 +16,7 @@ import Http
 import Json.Decode as Json
 import Platform.Cmd exposing (Cmd)
 import Spinner
-import Time exposing (every, minute)
+import Time exposing (every)
 
 
 type alias Model =
@@ -27,6 +28,11 @@ type alias Model =
     , geocodingSpinner : Spinner.Model
     , forecastSpinner : Spinner.Model
     }
+
+
+minute : Float
+minute =
+    60 * 1000
 
 
 init : List Location -> ( Model, Cmd Msg )
@@ -159,19 +165,19 @@ update msg model =
         AddLocation geolocation ->
             addLocation model geolocation
 
-        GeocodingSpinnerMsg msg ->
+        GeocodingSpinnerMsg spinnerMsg ->
             let
                 spinnerModel =
-                    Spinner.update msg model.geocodingSpinner
+                    Spinner.update spinnerMsg model.geocodingSpinner
             in
-                { model | geocodingSpinner = spinnerModel } ! []
+                ( { model | geocodingSpinner = spinnerModel }, Cmd.none )
 
-        ForecastSpinnerMsg msg ->
+        ForecastSpinnerMsg spinnerMsg ->
             let
                 spinnerModel =
-                    Spinner.update msg model.forecastSpinner
+                    Spinner.update spinnerMsg model.forecastSpinner
             in
-                { model | forecastSpinner = spinnerModel } ! []
+                ( { model | forecastSpinner = spinnerModel }, Cmd.none )
 
         RefreshAllForecasts ->
             ( model, Cmd.batch <| List.map queryForecast model.locations )
@@ -233,7 +239,7 @@ completeForecast model location =
                 ]
 
         Just forecast ->
-            W.forecast location forecast
+            W.forecastView location forecast
 
 
 addLocationInput : Model -> Html Msg
@@ -312,14 +318,14 @@ port storeLocations : List Location -> Cmd msg
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Sub.map GeocodingSpinnerMsg Spinner.subscription
-        , Sub.map ForecastSpinnerMsg Spinner.subscription
-        , every (5 * minute) (\_ -> RefreshAllForecasts)
+        [ every
+            (5 * minute)
+            (\_ -> RefreshAllForecasts)
         ]
 
 
 main =
-    Html.programWithFlags
+    Browser.element
         { init = init
         , update = update
         , view = view >> toUnstyled

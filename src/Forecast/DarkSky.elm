@@ -8,8 +8,8 @@ module Forecast.DarkSky
         , HourlyForecast
         )
 
-import Json.Decode as Json
-import Json.Decode.Pipeline exposing (decode, required)
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (required)
 
 
 type alias CompleteForecast =
@@ -67,61 +67,61 @@ type alias DailyForecast =
     }
 
 
-timespanForecastDecoder : Json.Decoder ft -> Json.Decoder (TimespanForecast ft)
+timespanForecastDecoder : Decode.Decoder ft -> Decode.Decoder (TimespanForecast ft)
 timespanForecastDecoder dataDecoder =
-    decode TimespanForecast
-        |> required "summary" Json.string
-        |> required "icon" Json.string
-        |> required "data" (Json.list dataDecoder)
+    Decode.succeed TimespanForecast
+        |> required "summary" Decode.string
+        |> required "icon" Decode.string
+        |> required "data" (Decode.list dataDecoder)
 
 
-hourlyForecastDecoder : Json.Decoder HourlyForecast
+hourlyForecastDecoder : Decode.Decoder HourlyForecast
 hourlyForecastDecoder =
-    decode HourlyForecast
-        |> required "time" Json.int
-        |> required "summary" Json.string
-        |> required "icon" Json.string
-        |> required "temperature" Json.float
-        |> required "precipIntensity" Json.float
-        |> required "precipProbability" Json.float
+    Decode.succeed HourlyForecast
+        |> required "time" Decode.int
+        |> required "summary" Decode.string
+        |> required "icon" Decode.string
+        |> required "temperature" Decode.float
+        |> required "precipIntensity" Decode.float
+        |> required "precipProbability" Decode.float
 
 
-forecastDecoder : Json.Decoder Forecast
+forecastDecoder : Decode.Decoder Forecast
 forecastDecoder =
-    decode Forecast
-        |> required "time" Json.int
-        |> required "summary" Json.string
-        |> required "icon" Json.string
-        |> required "precipIntensity" Json.float
-        |> required "precipProbability" Json.float
-        |> required "temperature" Json.float
-        |> required "windSpeed" Json.float
-        |> required "windBearing" Json.float
-        |> required "humidity" Json.float
-        |> required "visibility" Json.float
-        |> required "cloudCover" Json.float
-        |> required "pressure" Json.float
-        |> required "ozone" Json.float
+    Decode.succeed Forecast
+        |> required "time" Decode.int
+        |> required "summary" Decode.string
+        |> required "icon" Decode.string
+        |> required "precipIntensity" Decode.float
+        |> required "precipProbability" Decode.float
+        |> required "temperature" Decode.float
+        |> required "windSpeed" Decode.float
+        |> required "windBearing" Decode.float
+        |> required "humidity" Decode.float
+        |> required "visibility" Decode.float
+        |> required "cloudCover" Decode.float
+        |> required "pressure" Decode.float
+        |> required "ozone" Decode.float
 
 
-dailyForecastDecoder : Json.Decoder DailyForecast
+dailyForecastDecoder : Decode.Decoder DailyForecast
 dailyForecastDecoder =
-    decode DailyForecast
-        |> required "time" Json.int
-        |> required "summary" Json.string
-        |> required "icon" Json.string
-        |> required "precipIntensity" Json.float
-        |> required "precipProbability" Json.float
-        |> required "temperatureMin" Json.float
-        |> required "temperatureMax" Json.float
+    Decode.succeed DailyForecast
+        |> required "time" Decode.int
+        |> required "summary" Decode.string
+        |> required "icon" Decode.string
+        |> required "precipIntensity" Decode.float
+        |> required "precipProbability" Decode.float
+        |> required "temperatureMin" Decode.float
+        |> required "temperatureMax" Decode.float
 
 
-completeForecastDecoder : Json.Decoder CompleteForecast
+completeForecastDecoder : Decode.Decoder CompleteForecast
 completeForecastDecoder =
-    decode CompleteForecast
-        |> required "latitude" Json.float
-        |> required "longitude" Json.float
-        |> required "timezone" Json.string
+    Decode.succeed CompleteForecast
+        |> required "latitude" Decode.float
+        |> required "longitude" Decode.float
+        |> required "timezone" Decode.string
         |> required "currently" forecastDecoder
         |> required "hourly" (timespanForecastDecoder hourlyForecastDecoder)
         |> required "daily" (timespanForecastDecoder dailyForecastDecoder)

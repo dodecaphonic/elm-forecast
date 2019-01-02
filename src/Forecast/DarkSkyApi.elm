@@ -16,4 +16,4 @@ queryForecast loc =
 
 darkSky : Float -> Float -> String
 darkSky lat lon =
-    "http://localhost:9292/fetch/" ++ (toString lat) ++ "/" ++ (toString lon)
+    "http://localhost:9292/fetch/" ++ (String.fromFloat lat) ++ "/" ++ (String.fromFloat lon)
