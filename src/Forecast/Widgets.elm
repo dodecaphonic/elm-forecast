@@ -1,4 +1,4 @@
-module Forecast.Widgets exposing (forecast, locationListItem)
+module Forecast.Widgets exposing (forecastView, locationListItem)
 
 import Css exposing (..)
 import Html
@@ -7,11 +7,11 @@ import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Events exposing (onClick)
 import Forecast.DarkSky as DS
 import Forecast.Location exposing (Location)
-import Forecast.Messages exposing (Msg(SelectLocation))
+import Forecast.Messages exposing (Msg(..))
 
 
-forecast : Location -> DS.CompleteForecast -> Html Msg
-forecast location forecast =
+forecastView : Location -> DS.CompleteForecast -> Html Msg
+forecastView location forecast =
     div
         []
         [ currently location forecast.currently
@@ -100,7 +100,7 @@ wind speed bearing =
             windBearing bearing
 
         title =
-            (toString speed) ++ " km/h"
+            (String.fromFloat speed) ++ " km/h"
 
         subtitle =
             bearingDescription bearing
@@ -159,10 +159,10 @@ precipitation intensity probability =
             "wi wi-umbrella"
 
         title =
-            (toString probability) ++ "%"
+            (String.fromFloat probability) ++ "%"
 
         subtitle =
-            (toString intensity) ++ " cm"
+            (String.fromFloat intensity) ++ " cm"
     in
         dataPoint icon title subtitle
 
@@ -174,7 +174,7 @@ pressure press =
             "wi wi-down"
 
         title =
-            (toString press) ++ " mb"
+            (String.fromFloat press) ++ " mb"
 
         subtitle =
             "Pressure"
@@ -269,7 +269,7 @@ temperatureStyles temp =
 
 formatTemperature : Float -> String
 formatTemperature temp =
-    (toString <| truncate temp) ++ "º"
+    (String.fromInt <| truncate temp) ++ "º"
 
 
 weatherIcon : List Style -> String -> Html msg

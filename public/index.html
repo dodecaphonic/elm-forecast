@@ -8,15 +8,20 @@
   </head>
 
   <body>
+    <div id="app">
+    </div>
   </body>
 
-  <script type="text/javascript" src="js/forecast.js"></script>
+  <script type="text/javascript" src="../src/Forecast.elm"></script>
   <script type="text/javascript">
-   var app = Elm.Forecast.fullscreen(JSON.parse(localStorage["forecastLocations"] || "[]"));
-
-   app.ports.storeLocations.subscribe(function (locations) {
-     localStorage["forecastLocations"] = JSON.stringify(locations);
+   const { Elm } = parcelRequire("../src/Forecast.elm");
+   const app = Elm.Forecast.init({
+     node: document.querySelector("#app"),
+     flags: []
    });
 
+   app.ports.storeLocations.subscribe((locations) =>
+     localStorage["forecastLocations"] = JSON.stringify(locations)
+   );
   </script>
 </html>

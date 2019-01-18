@@ -2,8 +2,9 @@ module Forecast.Geocoding exposing (GeoLocation, fetchGeocoding)
 
 import Http
 import Task exposing (Task, andThen)
-import Json.Decode as Json
-import Json.Decode.Pipeline exposing (decode, required)
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (required)
+import Url.Builder exposing (crossOrigin, string)
 
 
 type alias Address =
@@ -24,20 +25,20 @@ fetchGeocoding address =
 
 
 googleGeocoder : String -> String
-googleGeocoder =
-    ((++) "http://localhost:9292/geocode?address=") << Http.encodeUri
+googleGeocoder address =
+    crossOrigin "http://localhost:9292" [ "geocode" ] [ string "address" address ]
 
 
-geocodingOptionsDecoder : Json.Decoder (List GeoLocation)
+geocodingOptionsDecoder : Decode.Decoder (List GeoLocation)
 geocodingOptionsDecoder =
-    Json.field "results" (Json.list geolocationDecoder)
+    Decode.field "results" (Decode.list geolocationDecoder)
 
 
-geolocationDecoder : Json.Decoder GeoLocation
+geolocationDecoder : Decode.Decoder GeoLocation
 geolocationDecoder =
-    decode GeoLocation
-        |> required "formatted_address" Json.string
+    Decode.succeed GeoLocation
+        |> required "formatted_address" Decode.string
         |> required "address_components"
-            (Json.index 0 <| Json.at [ "long_name" ] Json.string)
-        |> required "geometry" (Json.at [ "location", "lat" ] Json.float)
-        |> required "geometry" (Json.at [ "location", "lng" ] Json.float)
+            (Decode.index 0 <| Decode.at [ "long_name" ] Decode.string)
+        |> required "geometry" (Decode.at [ "location", "lat" ] Decode.float)
+        |> required "geometry" (Decode.at [ "location", "lng" ] Decode.float)
